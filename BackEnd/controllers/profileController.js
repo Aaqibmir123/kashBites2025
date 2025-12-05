@@ -1,0 +1,62 @@
+import Profile from "../models/Profile.js";
+import User from "../models/userModel.js";
+
+// ✅ CREATE / UPDATE PROFILE
+export const updateProfile = async (req, res) => {
+  try {
+    const { userId, name,email, address } = req.body;
+    console.log("Update Profile Request Body:", req.body);
+
+    let imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
+    let profile = await Profile.findOne({ user: userId });
+
+    if (profile) {
+      profile.name = name || profile.name;
+      profile.email = email || profile.email;
+      profile.address = address || profile.address;
+      if (imagePath) profile.image = imagePath;
+      await profile.save();
+    } else {
+      profile = await Profile.create({
+        user: userId,
+        name,
+        email,
+        address,
+        image: imagePath
+      });
+    }
+
+    res.json({ message: "Profile saved", profile });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+export const getProfile = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ message: "userId required" });
+
+    const user = await User.findById(userId).select("-otp");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const profile = await Profile.findOne({ user: userId });
+
+    const merged = {
+      _id: user._id,
+      phone: user.phone || "",
+      email: profile.email || "",
+      name: profile?.name || "",
+      address: profile?.address || "",
+      image: profile?.image || ""
+    };
+
+    return res.json(merged);
+  } catch (err) {
+    console.log("GET PROFILE ERROR:", err);
+    return res.status(500).json({ message: err.message });
+  }
+};
