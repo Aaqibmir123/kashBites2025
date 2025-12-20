@@ -4,8 +4,7 @@ import User from "../models/userModel.js";
 // ✅ CREATE / UPDATE PROFILE
 export const updateProfile = async (req, res) => {
   try {
-    const { userId, name,email, address } = req.body;
-    console.log("Update Profile Request Body:", req.body);
+    const { userId, name,email } = req.body;
 
     let imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -14,7 +13,6 @@ export const updateProfile = async (req, res) => {
     if (profile) {
       profile.name = name || profile.name;
       profile.email = email || profile.email;
-      profile.address = address || profile.address;
       if (imagePath) profile.image = imagePath;
       await profile.save();
     } else {
@@ -22,7 +20,7 @@ export const updateProfile = async (req, res) => {
         user: userId,
         name,
         email,
-        address,
+        
         image: imagePath
       });
     }
@@ -50,7 +48,6 @@ export const getProfile = async (req, res) => {
       phone: user.phone || "",
       email: profile.email || "",
       name: profile?.name || "",
-      address: profile?.address || "",
       image: profile?.image || ""
     };
 

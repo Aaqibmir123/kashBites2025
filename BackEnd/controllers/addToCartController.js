@@ -1,7 +1,6 @@
 import cartModel from "../models/cartModel.js";
 
 export const addToCartController = async (req, res) => {
-    console.log("Add to Cart Controller called with:", req.body);   
   try {
 
     const { cartData } = req.body;

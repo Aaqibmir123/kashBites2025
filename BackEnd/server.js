@@ -11,6 +11,8 @@ import profileRoutes from "./routes/profileRoute.js";
 import addToCartRoute from "./routes/addToCartRoute.js";
 import restaurantRoutes from "./routes/restaurantRoutes.js";
 import resturantRoutes from "./routes/resturants/resturantRoutes.js";
+import orderRoute from "./routes/orderRoute.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 dotenv.config();
 const app = express();
 
@@ -36,6 +38,8 @@ app.use("/api", profileRoutes);
 app.use("/api", addToCartRoute);
 app.use("/api", restaurantRoutes);
 app.use("/api", resturantRoutes);
+app.use("/api", orderRoute);
+app.use("/api", notificationRoutes);
 
 // ✅ Server start
 const PORT = process.env.PORT || 5000;

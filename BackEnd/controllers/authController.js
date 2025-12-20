@@ -1,7 +1,6 @@
 import User from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 
-console.log("JWT_SECRET =", process.env.JWT_SECRET);
 
 export const loginWithPhone = async (req, res) => {
   try {

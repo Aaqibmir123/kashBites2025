@@ -127,6 +127,43 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
+//get all products
+export const getAllProducts = async (req, res) => {
+  try { 
+    const products = await ResturantProduct.find();
+    res.status(200).json({
+      success: true,
+      data: products,
+    });
+  }
+  catch (err) {
+    console.error("Get All Products Error:", err);
+    res.status(500).json({ success: false, message: "Internal Server Error", error: err.message });
+  }
+};
+
+//get single product
+export const getSingleProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const product = await ResturantProduct.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      data: product,
+    });
+  }
+  catch (err) {
+    console.error("Get Single Product Error:", err);
+    res.status(500).json({ success: false, message: "Internal Server Error", error: err.message });
+  }
+};
+
 
 
 

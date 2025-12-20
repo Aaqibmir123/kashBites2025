@@ -1,19 +1,38 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const orderSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  addressId: { type: mongoose.Schema.Types.ObjectId, ref: "Address" },
+const orderSchema = new mongoose.Schema(
+  {
+    address: {
+      name: String,
+      phone: String,
+      email: String,
+      address: String,
+      village: String,
+      city: String,
+      pincode: String,
+    },
 
-  items: [{
-    productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-    qty: Number,
-    price: Number
-  }],
+    product: {
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+      name: String,
+      description: String,
+      price: Number,
+      qty: Number,
+      image: String,
+    },
 
-  totalAmount: Number,
-  paymentStatus: { type: String, default: "PENDING" },
-  orderStatus: { type: String, default: "PLACED" },
+    restaurantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+      required: true,
+    },
 
-}, { timestamps: true });
+    status: {
+      type: String,
+      default: "Pending",
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model("Order", orderSchema);
+export default mongoose.model("Order", orderSchema);

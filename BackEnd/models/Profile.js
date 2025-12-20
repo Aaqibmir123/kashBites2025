@@ -9,7 +9,6 @@ const profileSchema = new mongoose.Schema({
   },
   name: String,
   email: String,
-  address: String,
   image: String
 }, { timestamps: true });
 
