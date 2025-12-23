@@ -13,7 +13,7 @@ export const createRestaurant = async (req, res) => {
       });
     }
 
-    // Check if user exists
+    // Check if phone already exists
     const existingUser = await User.findOne({ phone });
     if (existingUser) {
       return res.status(400).json({
@@ -22,7 +22,13 @@ export const createRestaurant = async (req, res) => {
       });
     }
 
-    // Create Restaurant
+    // ✅ IMAGE PATH (FROM MULTER)
+    let imagePath = null;
+    if (req.file) {
+      imagePath = `/uploads/${req.file.filename}`;
+    }
+
+    // ✅ CREATE RESTAURANT WITH IMAGE
     const newRestaurant = new Restaurant({
       name,
       ownerName,
@@ -30,18 +36,21 @@ export const createRestaurant = async (req, res) => {
       phone,
       email,
       address,
+      image: imagePath, // ⭐ SAVE IMAGE PATH
     });
+
     await newRestaurant.save();
 
-    // Create User WITH restaurantId
+    // ✅ CREATE USER
     const newUser = new User({
       phone,
       role: "restaurant",
-      restaurantId: newRestaurant._id,   // ⭐ MOST IMPORTANT
+      restaurantId: newRestaurant._id,
     });
+
     await newUser.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Restaurant created successfully",
       data: newRestaurant,
@@ -49,12 +58,14 @@ export const createRestaurant = async (req, res) => {
     });
 
   } catch (err) {
-    res.status(500).json({
+    console.error(err);
+    return res.status(500).json({
       success: false,
       message: err.message,
     });
   }
 };
+
 
 
 
@@ -72,23 +83,43 @@ export const getAllRestaurants = async (req, res) => {
 export const updateRestaurant = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
 
-    const updatedRestaurant = await Restaurant.findByIdAndUpdate(id, updates, {
-      new: true,
-    });
-
-    if (!updatedRestaurant) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Restaurant not found" });
+    const restaurant = await Restaurant.findById(id);
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found",
+      });
     }
 
-    res.status(200).json({ success: true, data: updatedRestaurant });
+    // ===== TEXT FIELDS =====
+    restaurant.name = req.body.name ?? restaurant.name;
+    restaurant.ownerName = req.body.ownerName ?? restaurant.ownerName;
+    restaurant.phone = req.body.phone ?? restaurant.phone;
+    restaurant.email = req.body.email ?? restaurant.email;
+    restaurant.address = req.body.address ?? restaurant.address;
+    restaurant.category = req.body.category ?? restaurant.category;
+
+    // ===== IMAGE (ONLY IF UPLOADED) =====
+    if (req.file) {
+      restaurant.image = `/uploads/${req.file.filename}`;
+    }
+
+    await restaurant.save();
+
+    res.status(200).json({
+      success: true,
+      data: restaurant,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("UPDATE RESTAURANT ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
+
 
 //Delete RESTAURANT
 
@@ -107,3 +138,7 @@ export const deleteRestaurant = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
+
+

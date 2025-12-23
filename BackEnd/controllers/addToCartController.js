@@ -2,35 +2,67 @@ import cartModel from "../models/cartModel.js";
 
 export const addToCartController = async (req, res) => {
   try {
-
     const { cartData } = req.body;
 
-    const userId = cartData.userId;
+    const {
+      userId,
+      productId,
+      name,
+      description,
+      image,
+      unitPrice,
+      qty,
+      size,
+      restaurantId
+    } = cartData;
 
-    const product = {
-      productId: cartData.productId,
-      name: cartData.name,
-      price: cartData.price,
-      description: cartData.description,
-      image: cartData.image,
-      qty: cartData.qty
-    };
+    if (!userId || !productId || !unitPrice) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cart data",
+      });
+    }
 
     let cart = await cartModel.findOne({ userId });
+
+    const product = {
+      productId,
+      name,
+      description,
+      image,
+      unitPrice,
+      qty,
+      size,
+      price: unitPrice * qty,
+      restaurantId
+    };
 
     if (!cart) {
       cart = new cartModel({
         userId,
-        items: []
+        items: [product],
+      });
+
+      await cart.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Item added to cart ✅",
+        cart,
       });
     }
 
-    const existing = cart.items.find(
-      item => item.productId?.toString() === product.productId
+    // ✅ SAFE CHECK (no crash)
+    const existingItem = cart.items.find(
+      (item) =>
+        item.productId &&
+        item.productId.toString() === productId &&
+        item.size === size
     );
 
-    if (existing) {
-      existing.qty += product.qty;
+    if (existingItem) {
+      existingItem.qty += qty;
+      existingItem.price = existingItem.qty * existingItem.unitPrice;
     } else {
       cart.items.push(product);
     }
@@ -38,15 +70,20 @@ export const addToCartController = async (req, res) => {
     await cart.save();
 
     return res.status(200).json({
+      success: true,
       message: "Item added to cart ✅",
-      cart
+      cart,
     });
-
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: "Server Error" });
+    console.log("ADD TO CART ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
   }
 };
+
+
 
 export const getCartController = async (req, res) => {
   try {

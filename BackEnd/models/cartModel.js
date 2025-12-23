@@ -13,7 +13,10 @@ const cartSchema = new mongoose.Schema({
       name: String,
       price: Number,
       image: String,
-      qty: { type: Number, default: 1, min: 1 }
+      qty: { type: Number, default: 1, min: 1 },
+      size:String,
+      productId:String,
+      restaurantId:String
     }
   ]
 

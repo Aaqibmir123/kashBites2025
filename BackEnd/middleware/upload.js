@@ -11,10 +11,12 @@ const storage = multer.diskStorage({
   },
 });
 
-// file filter (optional but recommended)
+// ✅ UPDATED file filter (React Native compatible)
 const fileFilter = (req, file, cb) => {
-  const allowed = ["image/jpeg", "image/png", "image/jpg"];
-  if (allowed.includes(file.mimetype)) {
+  const allowedExt = [".jpg", ".jpeg", ".png"];
+  const ext = path.extname(file.originalname).toLowerCase();
+
+  if (allowedExt.includes(ext)) {
     cb(null, true);
   } else {
     cb(new Error("Only images allowed"), false);

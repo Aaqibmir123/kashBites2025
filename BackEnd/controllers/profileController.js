@@ -1,7 +1,6 @@
 import Profile from "../models/Profile.js";
 import User from "../models/userModel.js";
 
-// ✅ CREATE / UPDATE PROFILE
 export const updateProfile = async (req, res) => {
   try {
     const { userId, name,email } = req.body;
@@ -39,6 +38,7 @@ export const getProfile = async (req, res) => {
     if (!userId) return res.status(400).json({ message: "userId required" });
 
     const user = await User.findById(userId).select("-otp");
+    console.log(user,'user')
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const profile = await Profile.findOne({ user: userId });

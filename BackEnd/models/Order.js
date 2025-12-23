@@ -2,20 +2,21 @@ import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema(
   {
+    userId: {
+      type: String,
+      ref: "User",
+      required: true,
+    },
+
     address: {
       name: String,
       phone: String,
-      email: String,
       address: String,
-      village: String,
-      city: String,
-      pincode: String,
     },
 
     product: {
       productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
       name: String,
-      description: String,
       price: Number,
       qty: Number,
       image: String,

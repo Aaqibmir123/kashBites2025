@@ -17,7 +17,6 @@ export const createProduct = async (req, res) => {
 
     // Image path
     let imagePath = req.file ? `/uploads/${req.file.filename}` : null;
-    console.log("IMAGE PATH:", imagePath);
 
     // 👉 Save to DB
     const newProduct = new ResturantProduct({

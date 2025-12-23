@@ -3,7 +3,6 @@ import OrderItem from "../models/Product.js";
 export const addProduct = async (req, res) => {
     try {
         const itemData = req.body;
-        console.log(itemData,'backend products')
         const newOrderItem = new OrderItem(itemData);
 
         const savedItem = await newOrderItem.save();
