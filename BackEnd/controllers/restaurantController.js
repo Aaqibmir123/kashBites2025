@@ -1,5 +1,6 @@
 import Restaurant from "../models/addResturantModel.js";
-import User from "../models/userModel.js"; 
+import User from "../models/userModel.js";
+import addProducts from "../models/resturants/addProducts.js";
 
 // CREATE RESTAURANT
 export const createRestaurant = async (req, res) => {
@@ -13,7 +14,7 @@ export const createRestaurant = async (req, res) => {
       });
     }
 
-    // Check if phone already exists
+    // ❗ phone unique check
     const existingUser = await User.findOne({ phone });
     if (existingUser) {
       return res.status(400).json({
@@ -22,21 +23,27 @@ export const createRestaurant = async (req, res) => {
       });
     }
 
-    // ✅ IMAGE PATH (FROM MULTER)
+    // IMAGE
     let imagePath = null;
     if (req.file) {
       imagePath = `/uploads/${req.file.filename}`;
     }
 
-    // ✅ CREATE RESTAURANT WITH IMAGE
+    // ✅ CREATE RESTAURANT (WITH DEFAULT TIMING)
     const newRestaurant = new Restaurant({
       name,
       ownerName,
-      category,
       phone,
       email,
       address,
-      image: imagePath, // ⭐ SAVE IMAGE PATH
+      category,
+      image: imagePath,
+
+      // 🔥 DEFAULT SETTINGS
+      isOpen: true,
+      openTime: "09:00",
+      closeTime: "22:00",
+      pauseUntil: null,
     });
 
     await newRestaurant.save();
@@ -56,7 +63,6 @@ export const createRestaurant = async (req, res) => {
       data: newRestaurant,
       user: newUser,
     });
-
   } catch (err) {
     console.error(err);
     return res.status(500).json({
@@ -65,9 +71,6 @@ export const createRestaurant = async (req, res) => {
     });
   }
 };
-
-
-
 
 //Get ALL RESTAURANTS
 export const getAllRestaurants = async (req, res) => {
@@ -121,24 +124,31 @@ export const updateRestaurant = async (req, res) => {
 };
 
 
-//Delete RESTAURANT
-
 export const deleteRestaurant = async (req, res) => {
   try {
     const { id } = req.params;
+
     const deletedRestaurant = await Restaurant.findByIdAndDelete(id);
 
     if (!deletedRestaurant) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Restaurant not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found",
+      });
     }
-    res.status(200).json({ success: true, message: "Restaurant deleted" });
+
+    // 2️⃣ Delete all products of this restaurant
+    await addProducts.deleteMany({ restaurantId: id });
+
+    res.status(200).json({
+      success: true,
+      message: "Restaurant and its products deleted successfully",
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
-
-
-
 

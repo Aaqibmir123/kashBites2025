@@ -7,10 +7,15 @@ export default function RestaurantDrawerLayout() {
       drawerContent={(props) => <CustomRestaurantDrawer {...props} />}
       screenOptions={{
         headerShown: false,
+        drawerPosition: "right",
+
+        // optional (recommended)
+        drawerType: "front",
+        drawerStyle: {
+          width: "100%",
+        },
       }}
     >
-      <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
-      <Drawer.Screen name="logout" options={{ title: "Logout" }} />
     </Drawer>
   );
 }

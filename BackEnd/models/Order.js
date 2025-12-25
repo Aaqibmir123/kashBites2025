@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const orderSchema = new mongoose.Schema(
   {
     userId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
@@ -14,13 +14,22 @@ const orderSchema = new mongoose.Schema(
       address: String,
     },
 
-    product: {
-      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-      name: String,
-      price: Number,
-      qty: Number,
-      image: String,
-    },
+    items: [
+      {
+        productId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+        },
+        name: String,
+        price: Number,
+        qty: Number,
+        image: String,
+        restaurantId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Restaurant",
+        },
+      },
+    ],
 
     restaurantId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -28,12 +37,21 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    itemTotal: Number,
+    deliveryFee: Number,
+    platformFee: Number,
+    gst: Number,
+    totalAmount: Number,
+    paymentMethod: String,
+
     status: {
       type: String,
+      enum: ["Pending", "Accepted", "Rejected", "Ready", "Delivered"],
       default: "Pending",
     },
   },
   { timestamps: true }
 );
+
 
 export default mongoose.model("Order", orderSchema);

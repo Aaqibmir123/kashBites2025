@@ -1,5 +1,13 @@
 import mongoose from "mongoose";
 
+const variantSchema = new mongoose.Schema(
+  {
+    label: { type: String, required: true }, // Small / Full / 1kg
+    price: { type: Number, required: true },
+  },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
   {
     restaurantId: {
@@ -23,19 +31,32 @@ const productSchema = new mongoose.Schema(
       type: String,
     },
 
-    price: {
-      type: Number,
-      required: true,
-    },
-
     category: {
       type: String,
       required: true,
     },
 
-    veg: {
-      type: Boolean,
-      default: true,
+    /* 🔥 PRICING LOGIC */
+    pricingType: {
+      type: String,
+      enum: ["single", "size", "quantity"],
+      default: "single",
+    },
+
+    price: {
+      type: Number, // only for single price
+    },
+
+    variants: {
+      type: [variantSchema], // pizza / biryani
+      default: [],
+    },
+
+    /* 🔥 FOOD TYPE */
+    foodType: {
+      type: String,
+      enum: ["veg", "nonveg"],
+      default: "veg",
     },
 
     available: {
@@ -51,7 +72,6 @@ const productSchema = new mongoose.Schema(
     image: {
       type: String,
     },
-    restaurantId: { type: String, required: true },
   },
   { timestamps: true }
 );

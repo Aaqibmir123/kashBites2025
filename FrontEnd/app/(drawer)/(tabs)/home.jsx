@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   FlatList,
   Image,
   TouchableOpacity,
@@ -10,12 +9,14 @@ import {
   StyleSheet,
 } from "react-native";
 import * as Location from "expo-location";
+
 import { getAllProductsApi } from "../../../src/api/addResturantProducts.js";
 import { BASE_IMAGE_URL } from "../../../src/api/constants/endpoints.js";
 
 import HomeSlider from "../../../src/components/HomeSlider.jsx";
 import Restaurant from "../../../src/components/RestaurantNames.jsx";
 import ProductBottomModal from "../../../src/components/Resturant/ProductBottomModal.jsx";
+import SearchBar from "../../../src/components/SearchBar.jsx";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -23,19 +24,19 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  // 🔹 modal state
+  // modal
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showModal, setShowModal] = useState(false);
-
-  console.log(selectedProduct,'selectedProduct')
 
   /* ================= FETCH PRODUCTS ================= */
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await getAllProductsApi();
-        setProducts(res.data);
-        setFilteredProducts(res.data);
+        if (res?.success) {
+          setProducts(res.data || []);
+          setFilteredProducts(res.data || []);
+        }
       } catch (error) {
         console.log("API error:", error);
       } finally {
@@ -52,10 +53,7 @@ export default function Home() {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") return;
-
-        const loc = await Location.getCurrentPositionAsync({});
-        console.log("📍 LOCATION:", loc.coords);
-
+        await Location.getCurrentPositionAsync({});
       } catch (err) {
         console.log("Location error:", err);
       }
@@ -65,10 +63,30 @@ export default function Home() {
   /* ================= SEARCH ================= */
   useEffect(() => {
     const filtered = products.filter((p) =>
-      p.name.toLowerCase().includes(search.toLowerCase())
+      p.name?.toLowerCase().includes(search.toLowerCase())
     );
     setFilteredProducts(filtered);
   }, [search, products]);
+
+  /* ================= PRICE LOGIC (IMPORTANT) ================= */
+  const getDisplayPrice = (item) => {
+    // Single price
+    if (item.pricingType === "single") {
+      return `₹${item.price}`;
+    }
+
+    // Size / Quantity
+    if (
+      item.pricingType !== "single" &&
+      Array.isArray(item.variants) &&
+      item.variants.length > 0
+    ) {
+      const prices = item.variants.map((v) => Number(v.price));
+      return `From ₹${Math.min(...prices)}`;
+    }
+
+    return "₹0";
+  };
 
   /* ================= LOADING ================= */
   if (loading) {
@@ -79,7 +97,7 @@ export default function Home() {
     );
   }
 
-  /* ================= CARD ================= */
+  /* ================= PRODUCT CARD ================= */
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Image
@@ -95,9 +113,9 @@ export default function Home() {
         {item.name}
       </Text>
 
-      <Text style={styles.price}>₹{item.price}</Text>
+      {/* ✅ CORRECT PRICE DISPLAY */}
+      <Text style={styles.price}>{getDisplayPrice(item)}</Text>
 
-      {/* 🔥 OPEN MODAL INSTEAD OF NAVIGATION */}
       <TouchableOpacity
         style={styles.orderBtn}
         onPress={() => {
@@ -114,14 +132,9 @@ export default function Home() {
   return (
     <View style={{ flex: 1, padding: 10 }}>
       {/* SEARCH */}
-      <TextInput
-        placeholder="Search products..."
-        value={search}
-        onChangeText={setSearch}
-        style={styles.search}
-      />
+      <SearchBar value={search} onChange={setSearch} />
 
-      {/* PRODUCTS LIST */}
+      {/* PRODUCTS */}
       <FlatList
         data={filteredProducts}
         keyExtractor={(item) => item._id}
@@ -138,7 +151,7 @@ export default function Home() {
         }
       />
 
-      {/* 🔥 PRODUCT MODAL */}
+      {/* PRODUCT MODAL */}
       <ProductBottomModal
         visible={showModal}
         product={selectedProduct}
@@ -158,15 +171,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  search: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 16,
-    marginBottom: 10,
   },
 
   card: {
@@ -194,6 +198,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "green",
     marginTop: 3,
+    fontWeight: "bold",
   },
 
   orderBtn: {

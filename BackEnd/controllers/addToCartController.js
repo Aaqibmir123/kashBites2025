@@ -13,7 +13,7 @@ export const addToCartController = async (req, res) => {
       unitPrice,
       qty,
       size,
-      restaurantId
+      restaurantId,
     } = cartData;
 
     if (!userId || !productId || !unitPrice) {
@@ -34,7 +34,7 @@ export const addToCartController = async (req, res) => {
       qty,
       size,
       price: unitPrice * qty,
-      restaurantId
+      restaurantId,
     };
 
     if (!cart) {
@@ -83,29 +83,52 @@ export const addToCartController = async (req, res) => {
   }
 };
 
-
-
 export const getCartController = async (req, res) => {
+  console.log("cart conytrller");
+
   try {
-    const { userId } = req.params;  
+    const { userId } = req.params;
+    console.log("cart conytrller");
+
     const cart = await cartModel.findOne({ userId });
 
-    if (!cart) {
-      return res.status(200).json({ message: "Cart is empty", data: [] });
+    if (!cart || cart.items.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "Cart is empty",
+        data: {
+          items: [],
+          totalAmount: 0,
+        },
+      });
     }
-    return res.status(200).json({ message: "Cart fetched successfully", data: cart });
-    } catch (error) {   
-    console.log(error);
-    return res.status(500).json({ message: "Server Error" });
+
+    // ✅ CORRECT TOTAL CALCULATION
+    const totalAmount = cart.items.reduce((sum, item) => sum + item.price, 0);
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart fetched successfully",
+      data: {
+        _id: cart._id,
+        userId: cart.userId,
+        items: cart.items,
+        totalAmount,
+      },
+    });
+  } catch (error) {
+    console.log("❌ GET CART ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
   }
 };
 
-
 export const removeFromCartController = async (req, res) => {
   try {
-    console.log("Remove request body:", req.body);
 
-    const { userId, productId } = req.body.cartData;   // ✅ FIXED
+    const { userId, productId } = req.body.cartData; // ✅ FIXED
 
     const cart = await cartModel.findOne({ userId });
 
@@ -114,21 +137,49 @@ export const removeFromCartController = async (req, res) => {
     }
 
     // ✅ REMOVE BY CART ITEM _id
-    cart.items = cart.items.filter(
-      item => item._id.toString() !== productId
-    );
+    cart.items = cart.items.filter((item) => item._id.toString() !== productId);
 
     await cart.save();
 
     return res.status(200).json({
       message: "Item removed successfully ✅",
-      cart
+      cart,
     });
-
   } catch (error) {
     console.log("Remove error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
+export const clearCart = async (req, res) => {
+  try {
+    const { userId } = req.params;
 
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID required",
+      });
+    }
+
+    await cartModel.findOneAndUpdate(
+      { userId },
+      {
+        items: [],
+        totalAmount: 0,
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: "Cart cleared successfully",
+    });
+  } catch (err) {
+    console.error("Clear Cart Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};

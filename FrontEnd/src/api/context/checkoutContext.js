@@ -15,6 +15,7 @@ export const CheckoutProvider = ({ children }) => {
 
   /* ================= BILLING ================= */
   const [billing, setBilling] = useState({
+    cartItems: [],          // 🔥 IMPORTANT
     itemTotal: 0,
     deliveryFee: 30,
     platformFee: 5,
@@ -33,14 +34,15 @@ export const CheckoutProvider = ({ children }) => {
     const tax = Math.round(itemTotal * 0.05); // 5% GST
     const grandTotal = itemTotal + deliveryFee + platformFee + tax + tip;
 
-    setBilling({
+    setBilling((prev) => ({
+      ...prev,        // 🔥 cartItems safe
       itemTotal,
       deliveryFee,
       platformFee,
       tax,
       tip,
       grandTotal,
-    });
+    }));
   };
 
   /* ================= RESET ================= */
@@ -55,6 +57,7 @@ export const CheckoutProvider = ({ children }) => {
     });
 
     setBilling({
+      cartItems: [],
       itemTotal: 0,
       deliveryFee: 30,
       platformFee: 5,
@@ -67,16 +70,11 @@ export const CheckoutProvider = ({ children }) => {
   return (
     <CheckoutContext.Provider
       value={{
-        /* address */
         address,
         setAddress,
-
-        /* billing */
         billing,
         setBilling,
         calculateBill,
-
-        /* helpers */
         resetCheckout,
       }}
     >
@@ -85,5 +83,4 @@ export const CheckoutProvider = ({ children }) => {
   );
 };
 
-/* ================= CUSTOM HOOK ================= */
 export const useCheckout = () => useContext(CheckoutContext);

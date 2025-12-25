@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   View,
   Text,
@@ -10,8 +10,12 @@ import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
+import { AuthContext } from "@/src/api/context/authContext";
+import { BASE_IMAGE_URL } from "@/src/api/constants/endpoints";
+
 export default function CustomRestaurantDrawer(props) {
   const router = useRouter();
+  const { user } = useContext(AuthContext);
 
   /* 🔙 BACK TO ORDERS (TABS ROOT) */
   const goBackToOrders = () => {
@@ -29,13 +33,8 @@ export default function CustomRestaurantDrawer(props) {
       }}
       activeOpacity={0.7}
     >
-      {/* LEFT ICON */}
       <Ionicons name={icon} size={22} color="#333" />
-
-      {/* TITLE */}
       <Text style={styles.menuText}>{title}</Text>
-
-      {/* RIGHT ARROW */}
       <Ionicons name="chevron-forward" size={20} color="#999" />
     </TouchableOpacity>
   );
@@ -53,36 +52,54 @@ export default function CustomRestaurantDrawer(props) {
       <View style={styles.header}>
         <Image
           source={{
-            uri: "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
+            uri: user?.image
+              ? `${BASE_IMAGE_URL}${user.image}`
+              : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
           }}
           style={styles.avatar}
         />
-        <Text style={styles.name}>Restaurant Panel</Text>
-        <Text style={styles.email}>Manage your restaurant</Text>
+
+        <Text style={styles.name}>
+          {user?.name || "Restaurant Panel"}
+        </Text>
+
+        <Text style={styles.email}>
+          {user?.email || "Manage your restaurant"}
+        </Text>
       </View>
 
-      {/* ===== MENU (ONLY SECONDARY OPTIONS) ===== */}
+      {/* ===== MENU ===== */}
       <View style={{ marginTop: 20 }}>
         <MenuItem
-          icon="speedometer-outline"
+          icon="grid-outline"
           title="Dashboard"
           route="/restaurant/dashboard"
         />
 
+      
+
         <MenuItem
-          icon="person-outline"
+          icon="fast-food-outline"
+          title="Add Products"
+          route="/restaurant/add-product"
+        />
+
+        <MenuItem
+          icon="person-circle-outline"
           title="Profile"
           route="/restaurant/profile"
         />
 
+      
+
         <MenuItem
-          icon="location-outline"
+          icon="map-outline"
           title="Address"
           route="/restaurant/address"
         />
 
         <MenuItem
-          icon="help-circle-outline"
+          icon="headset-outline"
           title="Support"
           route="/restaurant/support"
         />
@@ -108,13 +125,11 @@ export default function CustomRestaurantDrawer(props) {
 /* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
-  /* TOP BACK */
   topBar: {
     paddingHorizontal: 15,
     paddingVertical: 12,
   },
 
-  /* HEADER */
   header: {
     alignItems: "center",
     paddingVertical: 30,
@@ -140,7 +155,6 @@ const styles = StyleSheet.create({
     color: "#777",
   },
 
-  /* MENU */
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -155,7 +169,6 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 
-  /* FOOTER */
   footer: {
     marginTop: "auto",
     paddingLeft: 20,

@@ -13,11 +13,14 @@ import { GetUserOrders } from "../../../src/api/orders";
 import { BASE_IMAGE_URL } from "../../../src/api/constants/endpoints";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useCheckout } from "../../../src/api/context/checkoutContext";
 
 export default function Order() {
   const { user } = useContext(AuthContext);
   const userId = user?._id;
   const router = useRouter();
+
+  const { setBilling, calculateBill } = useCheckout(); // ✅ FIXED
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,35 +41,22 @@ export default function Order() {
     }
   };
 
-  const formatDateTime = (dateString) => {
-    const date = new Date(dateString);
-    const d = date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-    const t = date.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-    return `${d} • ${t}`;
-  };
+  /* 🔁 REORDER (FINAL WORKING) */
+  const handleReorder = (order) => {
+    // ✅ 1. SET CART ITEMS INTO CHECKOUT
+    setBilling((prev) => ({
+      ...prev,
+      cartItems: order.items,      // 🔥 SAME AS CART PAGE
+      itemTotal: order.itemTotal,
+    }));
 
-  /* 🔁 REORDER → ADDRESS PAGE (push so back works) */
-  const handleReorder = (item) => {
-    router.push({
-      pathname: "/(tabs)/cart/addAddress",
-      params: {
-        from: "order",
-        productId: item.product?.productId,
-        productName: item.product?.name,
-        productPrice: item.product?.price,
-        productQty: item.product?.qty,
-        productImage: item.product?.image,
-        restaurantId: item.restaurantId,
-      },
+    // ✅ 2. RECALCULATE BILL
+    calculateBill({
+      itemTotal: order.itemTotal,
     });
+
+    // ✅ 3. GO TO ADDRESS PAGE
+    router.push("/(tabs)/cart/addAddress");
   };
 
   if (!userId) {
@@ -102,37 +92,50 @@ export default function Order() {
         keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Image
-              source={{
-                uri: item.product?.image
-                  ? `${BASE_IMAGE_URL}${item.product.image}`
-                  : "https://cdn-icons-png.flaticon.com/512/837/837760.png",
-              }}
-              style={styles.image}
-            />
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{item.product?.name}</Text>
-
-              <Text style={styles.price}>₹ {item.product?.price}</Text>
-
-              <Text style={styles.address}>📍 {item.address?.address}</Text>
-
-              <Text style={styles.date}>
-                Ordered on {formatDateTime(item.createdAt)}
+          <View style={styles.orderCard}>
+            {/* HEADER */}
+            <View style={styles.headerRow}>
+              <Text style={styles.orderId}>
+                Order ID: {item._id.slice(-6)}
               </Text>
+              <Text style={styles.date}>
+                {new Date(item.createdAt).toLocaleString()}
+              </Text>
+            </View>
+
+            {/* ITEMS */}
+            {item.items.map((prod) => (
+              <View key={prod._id} style={styles.itemRow}>
+                <Image
+                  source={{
+                    uri: prod.image
+                      ? `${BASE_IMAGE_URL}${prod.image}`
+                      : "https://cdn-icons-png.flaticon.com/512/837/837760.png",
+                  }}
+                  style={styles.image}
+                />
+
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>{prod.name}</Text>
+                  <Text style={styles.qty}>Qty: {prod.qty}</Text>
+                </View>
+
+                <Text style={styles.price}>₹ {prod.price}</Text>
+              </View>
+            ))}
+
+            {/* TOTAL + REORDER */}
+            <View style={styles.totalRow}>
+              <View>
+                <Text style={styles.totalLabel}>Total Paid</Text>
+                <Text style={styles.totalPrice}>₹ {item.totalAmount}</Text>
+              </View>
 
               <TouchableOpacity
                 style={styles.reorderBtn}
                 onPress={() => handleReorder(item)}
               >
-                <Ionicons
-                  name="refresh"
-                  size={16}
-                  color="#fff"
-                  style={{ marginRight: 6 }}
-                />
+                <Ionicons name="refresh" size={14} color="#fff" />
                 <Text style={styles.reorderText}>Reorder</Text>
               </TouchableOpacity>
             </View>
@@ -143,72 +146,73 @@ export default function Order() {
   );
 }
 
-/* ---------- STYLES ---------- */
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    padding: 12,
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { flex: 1, backgroundColor: "#f5f5f5", padding: 12 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+
   title: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 12,
     textAlign: "center",
   },
-  card: {
-    flexDirection: "row",
+
+  orderCard: {
     backgroundColor: "#fff",
-    padding: 12,
     borderRadius: 12,
-    marginBottom: 10,
+    padding: 12,
+    marginBottom: 12,
     elevation: 2,
   },
-  image: {
-    width: 70,
-    height: 70,
-    borderRadius: 10,
-    marginRight: 12,
+
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
-  name: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  price: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "green",
-    marginTop: 2,
-  },
-  address: {
-    fontSize: 13,
-    color: "#555",
-    marginTop: 4,
-  },
-  date: {
-    fontSize: 12,
-    color: "#888",
-    marginTop: 4,
-  },
-  reorderBtn: {
-    marginTop: 10,
-    backgroundColor: "#D81B60",
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 20,
+
+  orderId: { fontSize: 12, fontWeight: "600", color: "#555" },
+  date: { fontSize: 12, color: "#777" },
+
+  itemRow: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
+    marginBottom: 10,
   },
+
+  image: { width: 60, height: 60, borderRadius: 8, marginRight: 10 },
+  name: { fontSize: 15, fontWeight: "600" },
+  qty: { fontSize: 12, color: "#555" },
+  price: { fontSize: 14, fontWeight: "700", color: "#2E7D32" },
+
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderColor: "#eee",
+    paddingTop: 8,
+    marginTop: 6,
+  },
+
+  totalLabel: { fontSize: 14, fontWeight: "700" },
+  totalPrice: { fontSize: 15, fontWeight: "800", color: "#D81B60" },
+
+  reorderBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#D81B60",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+
   reorderText: {
     color: "#fff",
     fontSize: 13,
-    fontWeight: "bold",
+    fontWeight: "700",
+    marginLeft: 6,
   },
 });

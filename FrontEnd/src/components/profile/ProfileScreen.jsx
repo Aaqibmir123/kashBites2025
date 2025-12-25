@@ -14,6 +14,19 @@ import { BASE_IMAGE_URL } from "@/src/api/constants/endpoints";
 import { Ionicons } from "@expo/vector-icons";
 import { AuthContext } from "@/src/api/context/authContext";
 
+/* ================= BASE64 → BLOB ================= */
+const base64ToBlob = (base64, mime) => {
+  const byteString = atob(base64);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+
+  return new Blob([ab], { type: mime });
+};
+
 export default function ProfileScreen({
   getProfileApi,
   updateProfileApi,
@@ -21,8 +34,6 @@ export default function ProfileScreen({
 }) {
   const { user, updateUser } = useContext(AuthContext);
   const userId = user?._id;
-
-  console.log('hello profile')
 
   const [profile, setProfile] = useState({
     name: "",
@@ -77,49 +88,47 @@ export default function ProfileScreen({
     setImageUri(result.assets[0].uri);
   };
 
-  /* ================= UPDATE PROFILE ================= */
+  /* ================= UPDATE PROFILE (BLOB) ================= */
   const handleUpdate = async () => {
-  if (!userId) return;
+    if (!userId) return;
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const formData = new FormData();
-    formData.append("userId", userId);
-    formData.append("name", profile.name);
-    formData.append("email", profile.email);
+    try {
+      const formData = new FormData();
+      formData.append("userId", userId);
+      formData.append("name", profile.name);
+      formData.append("email", profile.email);
 
-    if (selectedImage?.uri) {
-      formData.append("image", {
-        uri: selectedImage.uri,
-        type: selectedImage.type || "image/jpeg",
-        name: "profile.jpg",
+      if (selectedImage?.base64) {
+        const blob = base64ToBlob(
+          selectedImage.base64,
+          selectedImage.type || "image/jpeg"
+        );
+
+        formData.append("image", blob, "profile.jpg");
+      }
+
+      await updateProfileApi(formData);
+
+      Toast.show({
+        type: "success",
+        text1: "Profile Updated",
       });
+
+      fetchProfile();
+    } catch (err) {
+      console.log("UPDATE PROFILE ERROR 👉", err);
+
+      Toast.show({
+        type: "error",
+        text1: "Update Failed",
+        text2: "Something went wrong",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    console.log("SENDING FORM DATA 👉", formData);
-
-    await updateProfileApi(formData);
-
-    Toast.show({
-      type: "success",
-      text1: "Profile Updated",
-    });
-
-    fetchProfile();
-  } catch (err) {
-    console.log("UPDATE PROFILE ERROR 👉", err?.response || err);
-
-    Toast.show({
-      type: "error",
-      text1: "Update Failed",
-      text2: err?.response?.data?.message || "Something went wrong",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -178,9 +187,10 @@ export default function ProfileScreen({
   );
 }
 
-/* ================= STYLES (same as yours) ================= */
+/* ================= STYLES ================= */
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: "#f5f5f5" },
+
   header: {
     backgroundColor: "#E6005C",
     paddingVertical: 45,
@@ -188,10 +198,20 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
   },
+
   backBtn: { position: "absolute", left: 20, top: 45 },
+
   avatar: { width: 120, height: 120, borderRadius: 60 },
-  username: { fontSize: 20, fontWeight: "bold", color: "#fff", marginTop: 10 },
+
+  username: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+    marginTop: 10,
+  },
+
   form: { padding: 20 },
+
   input: {
     backgroundColor: "#fff",
     borderRadius: 10,
@@ -200,13 +220,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
   },
+
   disabled: { backgroundColor: "#eee" },
+
   btn: {
     backgroundColor: "#28a745",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
   },
+
   btnDisabled: { backgroundColor: "#28a74599" },
-  btnText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+
+  btnText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
 });

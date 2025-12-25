@@ -1,7 +1,9 @@
 import express from 'express';
-import { addToCartController,getCartController,removeFromCartController } from '../controllers/addToCartController.js';
+import { addToCartController,getCartController,removeFromCartController,clearCart } from '../controllers/addToCartController.js';
 const router = express.Router();
 router.post('/add-to-cart', addToCartController);
 router.get('/get-cart/:userId', getCartController);
 router.post('/remove-from-cart', removeFromCartController)
+router.delete("/clear/:userId", clearCart);
+
 export default router;

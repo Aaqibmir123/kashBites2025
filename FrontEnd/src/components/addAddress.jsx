@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { addAddressApi } from "../../../../src/api/addressApi.js";
+import { addAddressApi } from "../../src/api/addressApi.js";
 
 export default function AddAddress() {
   const router = useRouter();

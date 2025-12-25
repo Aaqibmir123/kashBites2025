@@ -17,9 +17,7 @@ export const PlaceOrder = async (orderData) => {
 };
 
 export const GetUserOrders = async (userId) => {
-  console.log(userId,'apii')
-  try {
-    const response = await fetch(
+  try {    const response = await fetch(
       `${BASE_URL}${Order.getOrders}/${userId}`,
       {
         method: "GET",

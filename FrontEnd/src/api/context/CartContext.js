@@ -26,7 +26,6 @@ export const CartProvider = ({ children }) => {
     };
 
     const res = await addToCartApi(payload);
-    console.log(res,'resetCheckout')
 
     if (res?.data?.item) {
       const exists = cart.find(

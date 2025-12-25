@@ -7,26 +7,41 @@ import mongoose from "mongoose";
 ========================= */
 export const placeOrder = async (req, res) => {
   try {
-    const { userId, address, product, restaurantId } = req.body;
+    const {
+      userId,
+      address,
+      items,
+      itemTotal,
+      deliveryFee,
+      platformFee,
+      gst,
+      totalAmount,
+      paymentMethod,
+    } = req.body;
 
-    if (!userId || !product || !address || !restaurantId) {
+    if (!userId || !address || !items || items.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
       });
     }
 
+    // 🔹 restaurantId first item se
+    const restaurantId = items[0].restaurantId;
+
+    // 1️⃣ CREATE ORDER
     const newOrder = await Order.create({
       userId,
       address,
-      product,
+      items,
       restaurantId,
+      itemTotal,
+      deliveryFee,
+      platformFee,
+      gst,
+      totalAmount,
+      paymentMethod,
       status: "Pending",
-    });
-
-    await Notification.create({
-      restaurantId,
-      message: `New order received: ${product.name} (Qty: ${product.qty})`,
     });
 
     res.status(201).json({
@@ -35,11 +50,13 @@ export const placeOrder = async (req, res) => {
       order: newOrder,
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server Error" });
+    console.error("Place Order Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
   }
 };
-
 
 /* =========================
    GET USER ORDERS BY USER ID
@@ -48,15 +65,12 @@ export const placeOrder = async (req, res) => {
 export const userOrders = async (req, res) => {
   try {
     const { userId } = req.params;
-
     const orders = await Order.find({
       $or: [
         { userId: new mongoose.Types.ObjectId(userId) },
         { userId: userId }, // 👈 OLD STRING SUPPORT
       ],
-
     }).sort({ createdAt: -1 });
-
 
     res.json({
       success: true,
@@ -68,4 +82,3 @@ export const userOrders = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
-

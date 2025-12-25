@@ -16,23 +16,16 @@ export const AuthProvider = ({ children }) => {
     const restoreSession = async () => {
       try {
         const savedToken = await getToken();
-        console.log("TOKEN FROM STORAGE:", savedToken);
 
         if (savedToken) {
           const decoded = jwtDecode(savedToken);
           console.log("DECODED TOKEN:", decoded);
 
           const userId =
-            decoded.userId ||
-            decoded._id ||
-            decoded.id ||
-            decoded.uid;
+            decoded.userId || decoded._id || decoded.id || decoded.uid;
 
           const restId =
-            decoded.restaurantId ||
-            decoded.restId ||
-            decoded.rid ||
-            null;
+            decoded.restaurantId || decoded.restId || decoded.rid || null;
 
           setToken(savedToken);
           setUser({

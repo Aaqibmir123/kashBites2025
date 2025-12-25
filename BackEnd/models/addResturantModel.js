@@ -40,7 +40,26 @@ const restaurantSchema = new mongoose.Schema(
 
     // ✅ IMAGE FIELD (NEW)
     image: {
-      type: String,        // stores path like /uploads/xxxx.jpg
+      type: String, // stores path like /uploads/xxxx.jpg
+      default: null,
+    },
+    isOpen: {
+      type: Boolean,
+      default: true,
+    },
+
+    openTime: {
+      type: String, // "10:00"
+      default: "10:00",
+    },
+
+    closeTime: {
+      type: String, // "23:00"
+      default: "22:00",
+    },
+
+    pauseUntil: {
+      type: Date,
       default: null,
     },
   },

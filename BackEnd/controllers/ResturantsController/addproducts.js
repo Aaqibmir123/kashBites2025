@@ -1,44 +1,54 @@
-import ResturantProduct from "../../models/Resturants/addProducts.js";
+import ResturantProduct from "../../models/resturants/addProducts.js";
 
 export const createProduct = async (req, res) => {
-  try {
-   
 
+  console.log(req.body,'hello products')
+  try {
     const {
       name,
       description,
       price,
       category,
-      veg,
+      pricingType,
+      variants,
+      foodType,
       available,
       discount,
-      restaurantId
+      restaurantId,
     } = req.body;
 
-    // Image path
+
     let imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // 👉 Save to DB
     const newProduct = new ResturantProduct({
       name,
       description,
-      price,
       category,
-      veg: veg === "true",            // convert string → boolean
-      available: available === "true",
+      pricingType,
+      foodType,
+      available: available === "true" || available === true,
       discount,
       restaurantId,
       image: imagePath,
     });
 
+    // 🔹 SINGLE PRICE
+    if (pricingType === "single") {
+      newProduct.price = price;
+    }
+
+    // 🔹 SIZE / QUANTITY
+    if (pricingType !== "single" && variants) {
+      newProduct.variants = JSON.parse(variants);
+    }
+
     await newProduct.save();
 
-    return res.json({
+    return res.status(201).json({
       success: true,
       message: "Product added successfully",
       data: newProduct,
     });
-
   } catch (err) {
     console.error("Add Product Error:", err);
     return res.status(500).json({
@@ -48,6 +58,7 @@ export const createProduct = async (req, res) => {
     });
   }
 };
+
 
 export const getProductsByRestaurant = async (req, res) => {
   try {
@@ -73,47 +84,64 @@ export const updateProduct = async (req, res) => {
       description,
       price,
       category,
-      veg,
+      pricingType,
+      variants,
+      foodType,
       available,
       discount,
-      restaurantId
     } = req.body;
-    // Image path
+
     let imagePath = req.file ? `/uploads/${req.file.filename}` : null;
-    console.log("IMAGE PATH:", imagePath);
+
     const updatedData = {
       name,
       description,
-      price,
       category,
-      veg: veg === "true",            // convert string → boolean
-      available: available === "true",
+      pricingType,
+      foodType,
+      available: available === "true" || available === true,
       discount,
-      restaurantId,
     };
+
+    if (pricingType === "single") {
+      updatedData.price = price;
+      updatedData.variants = [];
+    }
+
+    if (pricingType !== "single" && variants) {
+      updatedData.variants = JSON.parse(variants);
+      updatedData.price = undefined;
+    }
+
     if (imagePath) {
       updatedData.image = imagePath;
     }
+
     const updatedProduct = await ResturantProduct.findByIdAndUpdate(
       productId,
       updatedData,
       { new: true }
     );
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
       message: "Product updated successfully",
       data: updatedProduct,
     });
-  }
-  catch (err) {
+  } catch (err) {
     console.error("Update Product Error:", err);
-    res.status(500).json({ success: false, message: "Internal Server Error", error: err.message });
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
   }
 };
 
+
 //delete product
 export const deleteProduct = async (req, res) => {
-  try { 
+  try {
     const { productId } = req.params;
     await ResturantProduct.findByIdAndDelete(productId);
     res.status(200).json({
@@ -122,22 +150,33 @@ export const deleteProduct = async (req, res) => {
     });
   } catch (err) {
     console.error("Delete Product Error:", err);
-    res.status(500).json({ success: false, message: "Internal Server Error", error: err.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Internal Server Error",
+        error: err.message,
+      });
   }
 };
 
 //get all products
 export const getAllProducts = async (req, res) => {
-  try { 
+  try {
     const products = await ResturantProduct.find();
     res.status(200).json({
       success: true,
       data: products,
     });
-  }
-  catch (err) {
+  } catch (err) {
     console.error("Get All Products Error:", err);
-    res.status(500).json({ success: false, message: "Internal Server Error", error: err.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Internal Server Error",
+        error: err.message,
+      });
   }
 };
 
@@ -156,21 +195,14 @@ export const getSingleProduct = async (req, res) => {
       success: true,
       data: product,
     });
-  }
-  catch (err) {
+  } catch (err) {
     console.error("Get Single Product Error:", err);
-    res.status(500).json({ success: false, message: "Internal Server Error", error: err.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Internal Server Error",
+        error: err.message,
+      });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-

@@ -9,25 +9,23 @@ export default function CartLayout() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: "Cart", headerShown:false }}
+        options={{ title: "Cart", headerShown: false }}
       />
 
-          <Stack.Screen 
+      <Stack.Screen
         name="addAddress"
-        options={{ 
+        options={{
           title: "Delivery Address",
           headerShown: false,
         }}
       />
-      
-      {/* 3. checkout.js: Final Step
-        The back button will automatically go back to addAddress.js.
-      */}
-      <Stack.Screen 
-        name="checkouts"
-        options={{ 
+
+     
+      <Stack.Screen
+        name="payment"
+        options={{
           title: "Payment",
-          headerShown: true,
+          headerShown: false,
         }}
       />
     </Stack>

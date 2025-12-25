@@ -9,16 +9,17 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Toast from "react-native-toast-message";
+import { Ionicons } from "@expo/vector-icons";
+
 import { AuthContext } from "../../api/context/authContext.js";
 import {
   getProductsByRestaurantApi,
   deleteProduct,
 } from "../../api/addResturantProducts.js";
-import { Ionicons } from "@expo/vector-icons";
 import EditProduct from "./editProduct.js";
 import { BASE_IMAGE_URL } from "../../api/constants/endpoints.js";
 
-export default function ProductsList({refreshKey }) {
+export default function ProductsList({ refreshKey }) {
   const { user } = useContext(AuthContext);
 
   const [products, setProducts] = useState([]);
@@ -29,6 +30,7 @@ export default function ProductsList({refreshKey }) {
     fetchProducts();
   }, [refreshKey]);
 
+  /* ================= FETCH ================= */
   const fetchProducts = async () => {
     if (!user?.restaurantId) return;
     setLoading(true);
@@ -44,7 +46,7 @@ export default function ProductsList({refreshKey }) {
           text2: res.message || "Something went wrong",
         });
       }
-    } catch (error) {
+    } catch (err) {
       Toast.show({
         type: "error",
         text1: "Error",
@@ -55,6 +57,28 @@ export default function ProductsList({refreshKey }) {
     }
   };
 
+  /* ================= PRICE DISPLAY LOGIC ================= */
+  const getDisplayPrice = (item) => {
+    // Single price product
+    if (item.pricingType === "single") {
+      return `₹${item.price}`;
+    }
+
+    // Size / Quantity based
+    if (
+      item.pricingType !== "single" &&
+      Array.isArray(item.variants) &&
+      item.variants.length > 0
+    ) {
+      const prices = item.variants.map((v) => Number(v.price));
+      const minPrice = Math.min(...prices);
+      return `From ₹${minPrice}`;
+    }
+
+    return "₹0";
+  };
+
+  /* ================= ACTIONS ================= */
   const handleEdit = (item) => setSelectedProduct(item);
 
   const handleDelete = async (item) => {
@@ -65,17 +89,15 @@ export default function ProductsList({refreshKey }) {
         Toast.show({
           type: "success",
           text1: "Deleted",
-          text2: `${item.name} has been deleted`,
+          text2: `${item.name} deleted`,
         });
       } else {
         Toast.show({
           type: "error",
           text1: "Delete Failed",
-          text2: res.message || "Could not delete product",
         });
       }
     } catch (err) {
-      console.log("❌ Delete Error:", err);
       Toast.show({
         type: "error",
         text1: "Error",
@@ -84,47 +106,57 @@ export default function ProductsList({refreshKey }) {
     }
   };
 
-  const renderItem = ({ item }) => {
-    return (
-      <View style={styles.card}>
-        <Image
-          source={{
-            uri: item.image
-              ? `${BASE_IMAGE_URL}${item.image}`
-              : "https://cdn-icons-png.flaticon.com/512/837/837760.png",
-          }}
-          style={styles.image}
-        />
+  /* ================= RENDER ITEM ================= */
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      <Image
+        source={{
+          uri: item.image
+            ? `${BASE_IMAGE_URL}${item.image}`
+            : "https://cdn-icons-png.flaticon.com/512/837/837760.png",
+        }}
+        style={styles.image}
+      />
 
-        <Text numberOfLines={1} style={styles.name}>
-          {item.name}
-        </Text>
+      <Text numberOfLines={1} style={styles.name}>
+        {item.name}
+      </Text>
 
-        <Text numberOfLines={1} style={styles.description}>
-          {item.description || "No description"}
-        </Text>
+      <Text numberOfLines={1} style={styles.description}>
+        {item.description || "No description"}
+      </Text>
 
-        <Text style={styles.price}>₹{item.price}</Text>
+      {/* ✅ CORRECT PRICE */}
+      <Text style={styles.price}>{getDisplayPrice(item)}</Text>
 
-        <View style={styles.btnRow}>
-          <TouchableOpacity
-            style={styles.editBtn}
-            onPress={() => handleEdit(item)}
-          >
-            <Ionicons name="create-outline" size={18} color="white" />
-          </TouchableOpacity>
+      {/* OPTIONAL INFO */}
+      <Text style={styles.meta}>
+        {item.pricingType === "single"
+          ? "Single Price"
+          : item.pricingType === "size"
+          ? "Multiple Sizes"
+          : "Quantity Options"}
+      </Text>
 
-          <TouchableOpacity
-            style={styles.deleteBtn}
-            onPress={() => handleDelete(item)}
-          >
-            <Ionicons name="trash-outline" size={18} color="white" />
-          </TouchableOpacity>
-        </View>
+      <View style={styles.btnRow}>
+        <TouchableOpacity
+          style={styles.editBtn}
+          onPress={() => handleEdit(item)}
+        >
+          <Ionicons name="create-outline" size={18} color="#fff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={() => handleDelete(item)}
+        >
+          <Ionicons name="trash-outline" size={18} color="#fff" />
+        </TouchableOpacity>
       </View>
-    );
-  };
+    </View>
+  );
 
+  /* ================= LOADER ================= */
   if (loading) {
     return (
       <View style={styles.loaderBox}>
@@ -132,7 +164,6 @@ export default function ProductsList({refreshKey }) {
       </View>
     );
   }
-
 
   return (
     <View style={styles.container}>
@@ -150,6 +181,7 @@ export default function ProductsList({refreshKey }) {
         }
       />
 
+      {/* EDIT MODAL */}
       {selectedProduct && (
         <EditProduct
           product={selectedProduct}
@@ -163,9 +195,18 @@ export default function ProductsList({refreshKey }) {
   );
 }
 
+/* ================= STYLES ================= */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9f9f9" },
-  loaderBox: { flex: 1, justifyContent: "center", alignItems: "center" },
+  container: {
+    flex: 1,
+    backgroundColor: "#f9f9f9",
+  },
+
+  loaderBox: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
   card: {
     backgroundColor: "#fff",
@@ -204,6 +245,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     color: "tomato",
+    marginBottom: 2,
+  },
+
+  meta: {
+    fontSize: 10,
+    color: "#888",
     marginBottom: 8,
   },
 
@@ -218,7 +265,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: "48%",
     alignItems: "center",
-    justifyContent: "center",
   },
 
   deleteBtn: {
@@ -227,6 +273,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: "48%",
     alignItems: "center",
-    justifyContent: "center",
   },
 });

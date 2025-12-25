@@ -13,39 +13,52 @@ import { BASE_IMAGE_URL } from "../../api/constants/endpoints";
 import { CartContext } from "../../../src/api/context/CartContext";
 
 export default function ProductBottomModal({ visible, product, onClose }) {
-  const [qty, setQty] = useState(1);
-  const [selectedSize, setSelectedSize] = useState("Medium");
-  const [rating, setRating] = useState(4);
-  const [favorite, setFavorite] = useState(false);
-
   const { addToCart } = useContext(CartContext);
 
+  const [qty, setQty] = useState(1);
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [favorite, setFavorite] = useState(false);
+
+  /* ================= RESET ON OPEN ================= */
   useEffect(() => {
-    if (visible) {
+    if (visible && product) {
       setQty(1);
-      setSelectedSize("Medium");
-      setRating(4);
       setFavorite(false);
+
+      // default variant (if exists)
+      if (
+        product.pricingType !== "single" &&
+        product.variants?.length > 0
+      ) {
+        setSelectedVariant(product.variants[0]);
+      } else {
+        setSelectedVariant(null);
+      }
     }
-  }, [visible]);
+  }, [visible, product]);
 
   if (!product) return null;
 
-  const price = product.price || 0;
-  const totalAmount = price * qty;
+  /* ================= PRICE LOGIC ================= */
+  const unitPrice =
+    product.pricingType === "single"
+      ? product.price
+      : selectedVariant?.price || 0;
 
+  const totalAmount = unitPrice * qty;
 
-  
-  // ✅ ADD TO CART HANDLER
+  /* ================= ADD TO CART ================= */
   const handleAddToCart = () => {
     addToCart({
-      productId: product._id, // ✅ FIX
+      productId: product._id,
       name: product.name,
       description: product.description || "",
-      unitPrice: product.price, // ✅ FIX
+      unitPrice,
       qty,
       image: product.image,
-      size: selectedSize,
+      variant: selectedVariant
+        ? selectedVariant.label
+        : null,
       restaurantId: product.restaurantId,
     });
 
@@ -55,19 +68,19 @@ export default function ProductBottomModal({ visible, product, onClose }) {
       text2: `${product.name} added successfully`,
     });
 
-    onClose(); // close modal
+    onClose();
   };
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
-          {/* ❌ CLOSE */}
+          {/* CLOSE */}
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
             <Ionicons name="close" size={22} color="#111" />
           </TouchableOpacity>
 
-          {/* IMAGE + FAVORITE */}
+          {/* IMAGE */}
           <View style={styles.imageWrapper}>
             <Image
               source={{
@@ -93,48 +106,45 @@ export default function ProductBottomModal({ visible, product, onClose }) {
           {/* NAME */}
           <Text style={styles.name}>{product.name}</Text>
 
-          {/* ⭐ RATING */}
-          <View style={styles.ratingRow}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity key={star} onPress={() => setRating(star)}>
-                <Ionicons
-                  name={star <= rating ? "star" : "star-outline"}
-                  size={20}
-                  color="#F59E0B"
-                />
-              </TouchableOpacity>
-            ))}
-            <Text style={styles.ratingText}>{rating}.0</Text>
-          </View>
-
           {/* DESCRIPTION */}
           <Text style={styles.desc}>
             {product.description || "Fresh and delicious item"}
           </Text>
 
-          {/* SIZE */}
-          <Text style={styles.section}>Choose Size</Text>
-          <View style={styles.sizeRow}>
-            {["Small", "Medium", "Large"].map((size) => (
-              <TouchableOpacity
-                key={size}
-                style={[
-                  styles.sizeBtn,
-                  selectedSize === size && styles.sizeActive,
-                ]}
-                onPress={() => setSelectedSize(size)}
-              >
-                <Text
-                  style={[
-                    styles.sizeText,
-                    selectedSize === size && styles.sizeTextActive,
-                  ]}
-                >
-                  {size}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {/* VARIANTS */}
+          {product.pricingType !== "single" && (
+            <>
+              <Text style={styles.section}>
+                {product.pricingType === "size"
+                  ? "Choose Size"
+                  : "Choose Quantity"}
+              </Text>
+
+              <View style={styles.variantRow}>
+                {product.variants.map((v, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={[
+                      styles.variantBtn,
+                      selectedVariant?.label === v.label &&
+                        styles.variantActive,
+                    ]}
+                    onPress={() => setSelectedVariant(v)}
+                  >
+                    <Text
+                      style={[
+                        styles.variantText,
+                        selectedVariant?.label === v.label &&
+                          styles.variantTextActive,
+                      ]}
+                    >
+                      {v.label} • ₹{v.price}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
 
           {/* TOTAL + QTY */}
           <View style={styles.totalRow}>
@@ -162,8 +172,11 @@ export default function ProductBottomModal({ visible, product, onClose }) {
             </View>
           </View>
 
-          {/* 🛒 ADD TO CART */}
-          <TouchableOpacity style={styles.addBtn} onPress={handleAddToCart}>
+          {/* ADD TO CART */}
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={handleAddToCart}
+          >
             <Text style={styles.addText}>Add to Cart</Text>
           </TouchableOpacity>
         </View>
@@ -195,9 +208,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
 
-  imageWrapper: {
-    position: "relative",
-  },
+  imageWrapper: { position: "relative" },
 
   image: {
     width: "100%",
@@ -218,20 +229,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     marginTop: 10,
-    color: "#111827",
-  },
-
-  ratingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 6,
-  },
-
-  ratingText: {
-    marginLeft: 6,
-    fontSize: 13,
-    color: "#374151",
-    fontWeight: "600",
   },
 
   desc: {
@@ -244,16 +241,16 @@ const styles = StyleSheet.create({
     marginTop: 14,
     fontSize: 14,
     fontWeight: "600",
-    color: "#111827",
   },
 
-  sizeRow: {
+  variantRow: {
     flexDirection: "row",
-    marginTop: 8,
+    flexWrap: "wrap",
     gap: 10,
+    marginTop: 8,
   },
 
-  sizeBtn: {
+  variantBtn: {
     borderWidth: 1,
     borderColor: "#D1D5DB",
     paddingHorizontal: 14,
@@ -261,17 +258,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
 
-  sizeActive: {
+  variantActive: {
     borderColor: "#16A34A",
     backgroundColor: "#ECFDF5",
   },
 
-  sizeText: {
+  variantText: {
     fontSize: 13,
     color: "#374151",
   },
 
-  sizeTextActive: {
+  variantTextActive: {
     color: "#166534",
     fontWeight: "600",
   },
@@ -304,15 +301,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
 
-  qtyBtn: {
-    padding: 4,
-  },
+  qtyBtn: { padding: 4 },
 
   qtyText: {
     marginHorizontal: 10,
     fontSize: 15,
     fontWeight: "600",
-    color: "#111827",
   },
 
   addBtn: {

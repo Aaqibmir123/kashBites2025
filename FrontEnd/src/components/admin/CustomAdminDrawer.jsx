@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,22 @@ import {
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { AuthContext } from "@/src/api/context/authContext";
+import { BASE_IMAGE_URL } from "@/src/api/constants/endpoints";
 
 export default function CustomAdminDrawer(props) {
   const router = useRouter();
+  const { user, logout } = useContext(AuthContext);
 
   const goTo = (route) => {
     props.navigation.closeDrawer();
     router.replace(route);
   };
+
+  const profileImage =
+    user?.image
+      ? `${BASE_IMAGE_URL}${user.image}`
+      : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
 
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
@@ -29,41 +37,38 @@ export default function CustomAdminDrawer(props) {
 
       {/* ================= HEADER ================= */}
       <View style={styles.header}>
-        <Image
-          source={{
-            uri: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-          }}
-          style={styles.avatar}
-        />
-        <Text style={styles.name}>Admin Panel</Text>
-        <Text style={styles.email}>Manage KashBites</Text>
+        <Image source={{ uri: profileImage }} style={styles.avatar} />
+
+        <Text style={styles.name}>
+          {user?.name || "Admin"}
+        </Text>
+
+        <Text style={styles.email}>
+          {user?.email || "admin@kashbites.com"}
+        </Text>
       </View>
 
       {/* ================= MENU ================= */}
       <View style={{ marginTop: 20 }}>
+         <DrawerItem
+          icon="speedometer-outline"
+          title="Dashboard"
+          onPress={() => goTo("/admin/dashboard")}
+        />
         <DrawerItem
           icon="person-outline"
           title="Profile"
           onPress={() => goTo("/admin/profile")}
         />
-
-        <DrawerItem
-          icon="speedometer-outline"
-          title="Dashboard"
-          onPress={() => goTo("/admin/dashboard")}
+         <DrawerItem
+          icon="person-outline"
+          title="Notification"
+          onPress={() => goTo("/admin/notifications")}
         />
 
-        <DrawerItem
-          icon="receipt-outline"
-          title="Orders"
-          onPress={() => goTo("/admin")}
-        />
+       
 
-        <DrawerItem
-          icon="restaurant-outline"
-          title="Add Restaurant"
-          onPress={() => goTo("/admin/(tabs)/add-restaurant")}
-        />
+      
       </View>
 
       {/* ================= LOGOUT ================= */}
@@ -72,7 +77,10 @@ export default function CustomAdminDrawer(props) {
           icon="log-out-outline"
           title="Logout"
           danger
-          onPress={() => goTo("/auth/login")}
+          onPress={() => {
+            logout();
+            router.replace("/auth/login");
+          }}
         />
       </View>
     </DrawerContentScrollView>
@@ -87,19 +95,16 @@ function DrawerItem({ icon, title, onPress, danger }) {
       onPress={onPress}
       activeOpacity={0.7}
     >
-      {/* LEFT ICON */}
       <Ionicons
         name={icon}
         size={22}
         color={danger ? "#E53935" : "#333"}
       />
 
-      {/* TITLE */}
       <Text style={[styles.menuText, danger && styles.logoutText]}>
         {title}
       </Text>
 
-      {/* RIGHT ARROW */}
       <Ionicons
         name="chevron-forward"
         size={20}
@@ -109,8 +114,7 @@ function DrawerItem({ icon, title, onPress, danger }) {
   );
 }
 
-/* ================= STYLES (USER DRAWER COPY) ================= */
-
+/* ================= STYLES ================= */
 const styles = StyleSheet.create({
   topBar: {
     paddingHorizontal: 15,
@@ -124,9 +128,9 @@ const styles = StyleSheet.create({
   },
 
   avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: "#ddd",
@@ -140,6 +144,7 @@ const styles = StyleSheet.create({
   email: {
     fontSize: 13,
     color: "#777",
+    marginTop: 2,
   },
 
   menuItem: {

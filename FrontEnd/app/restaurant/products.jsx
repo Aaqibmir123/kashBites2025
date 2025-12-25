@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { getProductsByRestaurantApi } from "../../src/api/addResturantProducts";
@@ -16,18 +16,20 @@ import { BASE_IMAGE_URL } from "../../src/api/constants/endpoints";
 import ProductBottomModal from "../../src/components/Resturant/ProductBottomModal";
 
 export default function Products() {
+  const router = useRouter();
   const { restaurantId, name } = useLocalSearchParams();
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // modal state
+  // modal
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // favorite state (local)
+  // favorites (local only)
   const [favorites, setFavorites] = useState({});
 
+  /* ================= FETCH ================= */
   useEffect(() => {
     if (restaurantId) fetchProducts();
   }, [restaurantId]);
@@ -36,7 +38,7 @@ export default function Products() {
     try {
       const res = await getProductsByRestaurantApi(restaurantId);
       if (res?.success) {
-        setProducts(res.data);
+        setProducts(res.data || []);
       }
     } catch (err) {
       console.log("PRODUCT FETCH ERROR", err);
@@ -45,14 +47,32 @@ export default function Products() {
     }
   };
 
-  // ADD button click
+  /* ================= PRICE LOGIC ================= */
+  const getDisplayPrice = (item) => {
+    // single price
+    if (item.pricingType === "single") {
+      return `₹${item.price}`;
+    }
+
+    // size / quantity
+    if (
+      item.pricingType !== "single" &&
+      Array.isArray(item.variants) &&
+      item.variants.length > 0
+    ) {
+      const prices = item.variants.map((v) => Number(v.price));
+      return `From ₹${Math.min(...prices)}`;
+    }
+
+    return "₹0";
+  };
+
+  /* ================= ACTIONS ================= */
   const handleAddPress = (product) => {
-    console.log('hello', product)
     setSelectedProduct(product);
     setShowModal(true);
   };
 
-  // favorite toggle
   const toggleFavorite = (productId) => {
     setFavorites((prev) => ({
       ...prev,
@@ -60,6 +80,7 @@ export default function Products() {
     }));
   };
 
+  /* ================= RENDER ITEM ================= */
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       {/* IMAGE + FAVORITE */}
@@ -73,7 +94,6 @@ export default function Products() {
           style={styles.productImg}
         />
 
-        {/* ❤️ Favorite */}
         <TouchableOpacity
           style={styles.favBtn}
           onPress={() => toggleFavorite(item._id)}
@@ -86,14 +106,13 @@ export default function Products() {
         </TouchableOpacity>
       </View>
 
-      {/* NAME */}
       <Text numberOfLines={1} style={styles.productName}>
         {item.name}
       </Text>
 
-      {/* PRICE + ADD */}
       <View style={styles.bottomRow}>
-        <Text style={styles.price}>₹{item.price}</Text>
+        {/* ✅ FIXED PRICE */}
+        <Text style={styles.price}>{getDisplayPrice(item)}</Text>
 
         <TouchableOpacity
           style={styles.addBtn}
@@ -105,25 +124,44 @@ export default function Products() {
     </View>
   );
 
+  /* ================= LOADER ================= */
   if (loading) {
     return <ActivityIndicator size="large" style={{ marginTop: 40 }} />;
   }
 
   return (
     <View style={styles.container}>
-      {/* ===== HEADER ===== */}
+      {/* ================= HEADER ================= */}
       <View style={styles.header}>
-        <Text style={styles.title}>Menu</Text>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => {
+            // 🔥 SAFE BACK (NO WARNING)
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/"); // fallback (home / tabs root)
+            }
+          }}
+        >
+          <Ionicons name="chevron-back" size={24} color="#111827" />
+        </TouchableOpacity>
 
-        <View style={styles.restaurantBox}>
-          <Text numberOfLines={1} style={styles.restaurantName}>
-            {name}
-          </Text>
-          <Ionicons name="heart-outline" size={18} color="#16A34A" />
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>Menu</Text>
+
+          <View style={styles.restaurantBox}>
+            <Text numberOfLines={1} style={styles.restaurantName}>
+              {name}
+            </Text>
+            <Ionicons name="heart-outline" size={16} color="#16A34A" />
+          </View>
         </View>
+
+        <View style={{ width: 32 }} />
       </View>
 
-      {/* ===== PRODUCTS GRID ===== */}
+      {/* ================= PRODUCTS ================= */}
       <FlatList
         data={products}
         keyExtractor={(item) => item._id}
@@ -134,7 +172,7 @@ export default function Products() {
         contentContainerStyle={{ paddingBottom: 80 }}
       />
 
-      {/* ===== BOTTOM MODAL ===== */}
+      {/* ================= MODAL ================= */}
       <ProductBottomModal
         visible={showModal}
         product={selectedProduct}
@@ -150,18 +188,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 12,
+    backgroundColor: "#F9FAFB",
   },
 
-  /* HEADER */
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 18,
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    elevation: 3,
+  },
+
+  backBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  headerCenter: {
+    alignItems: "center",
+    flex: 1,
   },
 
   title: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700",
     color: "#111827",
   },
@@ -171,20 +228,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#ECFDF5",
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingVertical: 4,
+    borderRadius: 14,
+    marginTop: 4,
     gap: 6,
-    maxWidth: "60%",
+    maxWidth: 180,
   },
 
   restaurantName: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
     color: "#166534",
-    maxWidth: 100,
+    maxWidth: 140,
   },
 
-  /* PRODUCT CARD */
   card: {
     width: "48%",
     marginBottom: 18,
@@ -198,6 +255,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 150,
     borderRadius: 16,
+    backgroundColor: "#E5E7EB",
   },
 
   favBtn: {

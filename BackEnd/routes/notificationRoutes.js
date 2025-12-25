@@ -1,8 +1,9 @@
-    import express from "express";
+import express from "express";
 import { getNotifications } from "../controllers/notificationController.js";
 
 const router = express.Router();
 
-router.get("/:restaurantId", getNotifications);
+/* ✅ SAFE & EXPLICIT ROUTE */
+router.get("/restaurant/:restaurantId", getNotifications);
 
 export default router;
