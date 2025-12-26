@@ -52,13 +52,13 @@ export default function Orders() {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+    // if (loading) {
+    //   return (
+    //     <View style={styles.center}>
+    //       <ActivityIndicator size="large" />
+    //     </View>
+    //   );
+    // }
 
   return (
     <View style={{ flex: 1 }}>

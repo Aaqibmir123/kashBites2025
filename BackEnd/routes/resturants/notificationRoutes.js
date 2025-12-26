@@ -12,7 +12,7 @@ const router = express.Router();
 ================================ */
 
 // Get all notifications (own restaurant)
-router.get("/notifications", getRestaurantNotifications);
+router.get("/notifications-api", getRestaurantNotifications);
 
 // Get unread count (🔔 badge)
 router.get("/unread-count", getRestaurantUnreadCount);

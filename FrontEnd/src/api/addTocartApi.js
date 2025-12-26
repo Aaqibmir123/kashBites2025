@@ -56,3 +56,20 @@ export const clearCartApi = async (userId) => {
     console.error("Clear Cart API Error:", err);
   }
 };
+
+export const getUserLastAddressApi = async (userId) => {
+  console.log(userId,'user id in last address api');
+  try {
+    const res = await fetch(  
+      BASE_URL + Cart.getuserLastAddress.replace(":userId", userId),
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return await res.json();
+  }
+    catch (err) {
+    console.error("Get User Last Address API Error:", err);
+  }
+}

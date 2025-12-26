@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,61 +12,109 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
-import { AuthContext } from "../../../../src/api/context/authContext";
 import { BASE_IMAGE_URL } from "../../../../src/api/constants/endpoints";
 import { useCheckout } from "../../../../src/api/context/checkoutContext";
+import { getUserLastAddressApi } from "../../../../src/api/addTocartApi";
+import ConfirmAddress from "./ConfirmAddress";
+import {AuthContext} from "../../../../src/api/context/authContext";
 
 export default function AddAddress() {
   const router = useRouter();
-  const { user } = useContext(AuthContext);
-
-  /* ===== CHECKOUT CONTEXT ===== */
   const { billing, address, setAddress, calculateBill } = useCheckout();
+  const { user } = React.useContext(AuthContext);
+  const userId  = user?._id;
 
+  /* ================= UI STATE ================= */
+  const [showForm, setShowForm] = useState(true);
+  const [loadingAddress, setLoadingAddress] = useState(true);
+
+  /* ================= FORM STATE ================= */
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    area: "",
+    address: "",
+    pincode: "",
+  });
+
+  /* ================= FETCH LAST ADDRESS ================= */
+  useEffect(() => {
+    fetchLastAddress();
+  }, []);
+
+  const fetchLastAddress = async () => {
+    try {
+      const res = await getUserLastAddressApi(userId);
+      console.log("Last address fetched:", res);
+
+      if (res?.success && res.address) {
+        setAddress({
+          name: res.address.name,
+          phone: res.address.phone,
+          area: res.address.village,
+          line1: res.address.house,
+          pincode: res.address.pincode || "",
+        });
+      }
+    } catch (err) {
+      console.log("No previous address");
+    } finally {
+      setLoadingAddress(false);
+    }
+  };
+
+  /* ================= SHOW / HIDE FORM ================= */
+  useEffect(() => {
+    if (address?.name) {
+      setShowForm(false); // address hai → card dikhao
+    } else {
+      setShowForm(true); // address nahi → form
+    }
+  }, [address]);
+
+  /* ================= BILLING ================= */
   const cartItems = billing.cartItems || [];
   const itemTotal = billing.itemTotal || 0;
   const deliveryFee = billing.deliveryFee || 0;
   const platformFee = billing.platformFee || 0;
   const tax = billing.tax || 0;
   const grandTotal =
-    billing.grandTotal ||
-    itemTotal + deliveryFee + platformFee + tax;
+    billing.grandTotal || itemTotal + deliveryFee + platformFee + tax;
 
-  /* ===== ADDRESS FORM ===== */
-  const [form, setForm] = useState({
-    name: address?.name || "",
-    phone: address?.phone || "",
-    address: address?.line1 || "",
-  });
-
+  /* ================= HANDLERS ================= */
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  /* ===== CONTINUE TO PAYMENT ===== */
-  const goToPayment = () => {
-    if (!form.name || !form.phone || !form.address) {
-      Alert.alert("Error", "Please fill address details");
+  const saveAddress = () => {
+    if (!form.name || !form.phone || !form.area || !form.address) {
+      Alert.alert("Incomplete Address", "Please fill all required fields");
       return;
     }
 
-    if (cartItems.length === 0) {
-      Alert.alert("Error", "Cart is empty");
-      return;
-    }
-
-    // ✅ SAVE ADDRESS
     setAddress({
       name: form.name,
       phone: form.phone,
+      area: form.area,
       line1: form.address,
+      pincode: form.pincode,
     });
 
-    // ✅ BILL (safe re-calc)
-    calculateBill({ itemTotal });
+    setShowForm(false); // 🔥 confirm card dikhao
+  };
 
+  const goToPayment = () => {
+    calculateBill({ itemTotal });
     router.push("/(tabs)/cart/payment");
   };
+
+  if (loadingAddress) {
+    return (
+      <View style={styles.center}>
+        <Text>Loading address...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>
@@ -75,37 +123,85 @@ export default function AddAddress() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Checkout</Text>
+        <Text style={styles.headerTitle}>Delivery Address</Text>
         <View style={{ width: 24 }} />
       </View>
 
       <ScrollView style={styles.container}>
-        {/* ===== ADDRESS ===== */}
-        <Text style={styles.section}>Delivery Address</Text>
+        {/* ===== CONFIRM ADDRESS ===== */}
+        {!showForm && address?.name && (
+          <ConfirmAddress
+            onChange={() => {
+              setForm({
+                name: "",
+                phone: "",
+                area: "",
+                address: "",
+                pincode: "",
+              });
+              setShowForm(true);
+            }}
+          />
+        )}
 
-        <TextInput
-          placeholder="Full Name"
-          style={styles.input}
-          value={form.name}
-          onChangeText={(v) => handleChange("name", v)}
-        />
+        {/* ===== ADDRESS FORM ===== */}
+        {showForm && (
+          <>
+            {address?.name && (
+              <TouchableOpacity onPress={() => setShowForm(false)}>
+                <Text style={styles.backText}>
+                  ← Back to saved address
+                </Text>
+              </TouchableOpacity>
+            )}
 
-        <TextInput
-          placeholder="Phone Number"
-          keyboardType="numeric"
-          maxLength={10}
-          style={styles.input}
-          value={form.phone}
-          onChangeText={(v) => handleChange("phone", v)}
-        />
+            <Text style={styles.section}>Enter Delivery Details</Text>
 
-        <TextInput
-          placeholder="Full Address"
-          multiline
-          style={[styles.input, styles.textArea]}
-          value={form.address}
-          onChangeText={(v) => handleChange("address", v)}
-        />
+            <TextInput
+              placeholder="Full Name"
+              style={styles.input}
+              value={form.name}
+              onChangeText={(v) => handleChange("name", v)}
+            />
+
+            <TextInput
+              placeholder="Phone"
+              keyboardType="numeric"
+              maxLength={10}
+              style={styles.input}
+              value={form.phone}
+              onChangeText={(v) => handleChange("phone", v)}
+            />
+
+            <TextInput
+              placeholder="Area / Village"
+              style={styles.input}
+              value={form.area}
+              onChangeText={(v) => handleChange("area", v)}
+            />
+
+            <TextInput
+              placeholder="House / Landmark"
+              multiline
+              style={[styles.input, styles.textArea]}
+              value={form.address}
+              onChangeText={(v) => handleChange("address", v)}
+            />
+
+            <TextInput
+              placeholder="Pincode (optional)"
+              keyboardType="numeric"
+              maxLength={6}
+              style={styles.input}
+              value={form.pincode}
+              onChangeText={(v) => handleChange("pincode", v)}
+            />
+
+            <TouchableOpacity style={styles.btn} onPress={saveAddress}>
+              <Text style={styles.btnText}>Save Address</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
         {/* ===== ORDER ITEMS ===== */}
         <Text style={styles.section}>Order Items</Text>
@@ -120,27 +216,21 @@ export default function AddAddress() {
               }}
               style={styles.image}
             />
-
             <View style={{ flex: 1 }}>
               <Text style={styles.itemName}>{item.name}</Text>
               <Text style={styles.qty}>Qty: {item.qty}</Text>
             </View>
-
             <Text style={styles.itemPrice}>₹ {item.price}</Text>
           </View>
         ))}
 
-        {/* ===== BILLING ===== */}
+        {/* ===== BILL ===== */}
         <View style={styles.billBox}>
-          <Text style={styles.billTitle}>Bill Details</Text>
-
           <BillRow label="Item Total" value={`₹ ${itemTotal}`} />
           <BillRow label="Delivery Fee" value={`₹ ${deliveryFee}`} />
           <BillRow label="Platform Fee" value={`₹ ${platformFee}`} />
           <BillRow label="GST" value={`₹ ${tax}`} />
-
           <View style={styles.divider} />
-
           <BillRow
             label="Grand Total"
             value={`₹ ${grandTotal}`}
@@ -149,12 +239,14 @@ export default function AddAddress() {
           />
         </View>
 
-        {/* ===== CONTINUE ===== */}
-        <TouchableOpacity style={styles.btn} onPress={goToPayment}>
-          <Text style={styles.btnText}>
-            Continue to Payment ₹ {grandTotal}
-          </Text>
-        </TouchableOpacity>
+        {/* ===== PAYMENT ===== */}
+        {!showForm && address?.name && (
+          <TouchableOpacity style={styles.btn} onPress={goToPayment}>
+            <Text style={styles.btnText}>
+              Proceed to Payment ₹ {grandTotal}
+            </Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );
@@ -177,10 +269,10 @@ const BillRow = ({ label, value, bold, highlight }) => (
   </View>
 );
 
-/* ================= STYLES ================= */
+/* ===== STYLES ===== */
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#fff" },
-
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     height: 56,
     backgroundColor: "#D81B60",
@@ -189,21 +281,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 12,
   },
-
-  headerTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-
+  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "600" },
   container: { padding: 16 },
-
-  section: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginVertical: 10,
-  },
-
+  section: { fontSize: 16, fontWeight: "700", marginVertical: 10 },
+  backText: { color: "#D81B60", marginBottom: 8, fontWeight: "600" },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -211,29 +292,12 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
   },
-
-  textArea: {
-    height: 80,
-    textAlignVertical: "top",
-  },
-
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-
-  image: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-
+  textArea: { height: 80, textAlignVertical: "top" },
+  itemRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  image: { width: 60, height: 60, borderRadius: 8, marginRight: 10 },
   itemName: { fontWeight: "600" },
   qty: { fontSize: 12, color: "#555" },
   itemPrice: { fontWeight: "700", color: "#2E7D32" },
-
   billBox: {
     marginTop: 16,
     padding: 14,
@@ -242,28 +306,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#eee",
   },
-
-  billTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-
   billRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 6,
   },
-
-  billLabel: { fontSize: 14, color: "#444" },
+  billLabel: { fontSize: 14 },
   billValue: { fontSize: 14 },
-
-  divider: {
-    height: 1,
-    backgroundColor: "#ddd",
-    marginVertical: 8,
-  },
-
+  divider: { height: 1, backgroundColor: "#ddd", marginVertical: 8 },
   btn: {
     backgroundColor: "#D81B60",
     padding: 14,
@@ -272,10 +322,5 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 30,
   },
-
-  btnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  btnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });

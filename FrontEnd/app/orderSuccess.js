@@ -1,8 +1,39 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { useEffect, useContext } from "react";
+
+import { AuthContext } from "@/src/api/context/authContext";
 
 export default function OrderSuccess() {
   const router = useRouter();
+  const { user } = useContext(AuthContext);
+
+  /* 🔔 Send notification once when page loads */
+  useEffect(() => {
+    if (user?._id) {
+      sendOrderSuccessNotification();
+    }
+  }, []);
+
+  const sendOrderSuccessNotification = async () => {
+    try {
+      await fetch(
+        "http://10.96.245.173:5000/api/notifications/send",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user._id,
+            title: "Order Placed ✅",
+            body:
+              "Your order has been placed successfully. Thank you for ordering ❤️",
+          }),
+        }
+      );
+    } catch (err) {
+      console.log("❌ Notification error:", err);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -20,6 +51,7 @@ export default function OrderSuccess() {
   );
 }
 
+/* ===== STYLES ===== */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -31,7 +63,6 @@ const styles = StyleSheet.create({
   bigEmoji: { fontSize: 80, marginBottom: 10 },
   title: { fontSize: 26, fontWeight: "bold", marginBottom: 10 },
   subtitle: { fontSize: 18, color: "#555", marginBottom: 30 },
-
   homeBtn: {
     backgroundColor: "#FF6347",
     paddingVertical: 14,

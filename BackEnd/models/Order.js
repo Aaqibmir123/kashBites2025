@@ -8,10 +8,14 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    // 🔥 ADDRESS SNAPSHOT (IMPORTANT)
     address: {
-      name: String,
-      phone: String,
-      address: String,
+      name: { type: String, required: true },
+      phone: { type: String, required: true },
+
+      house: { type: String, required: true },    // line1
+      village: { type: String, required: true },  // area
+      pincode: { type: String },                   // optional
     },
 
     items: [
@@ -19,6 +23,7 @@ const orderSchema = new mongoose.Schema(
         productId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
+          required: true,
         },
         name: String,
         price: Number,
@@ -27,22 +32,29 @@ const orderSchema = new mongoose.Schema(
         restaurantId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Restaurant",
+          required: true,
         },
       },
     ],
 
+    // 🔥 single-restaurant assumption
     restaurantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Restaurant",
       required: true,
     },
 
-    itemTotal: Number,
-    deliveryFee: Number,
-    platformFee: Number,
-    gst: Number,
-    totalAmount: Number,
-    paymentMethod: String,
+    itemTotal: { type: Number, required: true },
+    deliveryFee: { type: Number, default: 0 },
+    platformFee: { type: Number, default: 0 },
+    gst: { type: Number, default: 0 },
+    totalAmount: { type: Number, required: true },
+
+    paymentMethod: {
+      type: String,
+      enum: ["COD", "ONLINE"],
+      default: "COD",
+    },
 
     status: {
       type: String,
@@ -52,6 +64,5 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 
 export default mongoose.model("Order", orderSchema);

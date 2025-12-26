@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema(
       ref: "Restaurant",
       default: null, // user nahi hai toh null
     },
+    pushToken: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

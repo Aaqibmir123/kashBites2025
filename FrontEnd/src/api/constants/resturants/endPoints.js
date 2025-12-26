@@ -1,8 +1,8 @@
 /* ===============================
    BASE URLS
 ================================ */
-export const BASE_URL = "http://10.12.209.173:5000/api";
-export const BASE_IMAGE_URL = "http://10.12.209.173:5000";
+export const BASE_URL = "http://10.96.245.173:5000/api";
+export const BASE_IMAGE_URL = "http://10.96.245.173:5000";
 
 /* ===============================
    RESTAURANT ADDRESS
@@ -16,9 +16,10 @@ export const RestaurantAddress = {
    RESTAURANT NOTIFICATIONS
 ================================ */
 export const RestaurantNotifications = {
-  getAll: "/notifications",
+  getAll: "/notifications-api",
   unreadCount: "/unread-count",
   markRead: "/read",
+  
 };
 
 export const ResturantDashboard ={

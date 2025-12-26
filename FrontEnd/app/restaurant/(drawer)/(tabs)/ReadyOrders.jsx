@@ -71,12 +71,12 @@ useFocusEffect(
   };
 
   /* ================= LOADING ================= */
-  if (loading) {
-    return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
-  }
+  // if (loading) {
+  //   return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
+  // }
 
   return (
-    <View> 
+    <View>  
       <AppHeader/>
       <FlatList
       data={orders}

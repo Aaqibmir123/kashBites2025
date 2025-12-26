@@ -57,3 +57,9 @@ export const markRestaurantNotificationReadApi = async (notificationId) => {
     return { success: false };
   }
 };
+
+
+/* ===============================
+   SAVE USER PUSH TOKEN
+================================ */
+

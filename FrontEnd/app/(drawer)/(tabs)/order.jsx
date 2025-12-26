@@ -42,22 +42,23 @@ export default function Order() {
   };
 
   /* 🔁 REORDER (FINAL WORKING) */
-  const handleReorder = (order) => {
-    // ✅ 1. SET CART ITEMS INTO CHECKOUT
-    setBilling((prev) => ({
-      ...prev,
-      cartItems: order.items,      // 🔥 SAME AS CART PAGE
-      itemTotal: order.itemTotal,
-    }));
+ const handleReorder = (order) => {
+  // 1️⃣ items context me daalo
+  setBilling((prev) => ({
+    ...prev,
+    cartItems: order.items,
+    itemTotal: order.itemTotal,
+    isReorder: true,        // 🔥 flag
+  }));
 
-    // ✅ 2. RECALCULATE BILL
-    calculateBill({
-      itemTotal: order.itemTotal,
-    });
+  calculateBill({
+    itemTotal: order.itemTotal,
+  });
 
-    // ✅ 3. GO TO ADDRESS PAGE
-    router.push("/(tabs)/cart/addAddress");
-  };
+  // 2️⃣ review page par bhejo
+  router.push("/(tabs)/cart/reviewOrder"); // ✅ YAHI USE HOGA
+};
+
 
   if (!userId) {
     return (

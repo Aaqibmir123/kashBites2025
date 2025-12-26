@@ -16,7 +16,6 @@ import { PlaceOrder } from "../../../../src/api/orders";
 import { AuthContext } from "../../../../src/api/context/authContext";
 import { clearCartApi } from "../../../../src/api/addTocartApi";
 import { CartContext } from "../../../../src/api/context/CartContext";
-import { addAddressApi } from "../../../../src/api/addressApi";
 
 export default function Payment() {
   const router = useRouter();
@@ -26,67 +25,65 @@ export default function Payment() {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState(null); // ❌ no default
   const userId = user?._id;
+  console.log(userId,'userId in payment');
+
+  console.log(address,'address in payment');
   /* ================= PLACE ORDER ================= */
-  const handlePlaceOrder = async () => {
-    if (!paymentMethod) {
-      Alert.alert("Select Payment Method", "Please select a payment method");
-      return;
+ const handlePlaceOrder = async () => {
+  if (!paymentMethod) {
+    Alert.alert("Select Payment Method", "Please select a payment method");
+    return;
+  }
+
+  if (paymentMethod !== "COD") {
+    Alert.alert("Coming Soon", "This payment method will be available soon");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // 🔥 BACKEND-READY ADDRESS (IMPORTANT)
+    const orderAddress = {
+      name: address.name,
+      phone: address.phone,
+      house: address.line1,     // 👈 line1 → house
+      village: address.area,    // 👈 area → village
+      pincode: address.pincode || "",
+    };
+
+    const payload = {
+      userId: userId,
+      address: orderAddress,    // ✅ CORRECT
+      items: billing.cartItems,
+      itemTotal: billing.itemTotal,
+      deliveryFee: billing.deliveryFee,
+      platformFee: billing.platformFee,
+      gst: billing.tax,
+      totalAmount: billing.grandTotal,
+      paymentMethod: "COD",
+    };
+
+    console.log("FINAL ORDER PAYLOAD", payload);
+
+    const res = await PlaceOrder(payload);
+
+    if (res?.success) {
+      resetCheckout();
+      clearCart();
+      await clearCartApi(userId);
+      router.replace("../../../orderSuccess");
+    } else {
+      Alert.alert("Error", res?.message || "Order failed");
     }
+  } catch (err) {
+    console.log(err);
+    Alert.alert("Error", "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
 
-    if (paymentMethod !== "COD") {
-      Alert.alert("Coming Soon", "This payment method will be available soon");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      /* ================= SAVE ADDRESS ================= */
-      const addressPayload = {
-        userId: user._id,
-        name: address.name,
-        phone: address.phone,
-        address: address.line1,
-      };
-
-      const addressRes = await addAddressApi(addressPayload);
-      console.log(addressRes, "addAddressApi");
-
-      /* ================= PLACE ORDER ================= */
-      const payload = {
-        userId: user._id,
-        address,
-        items: billing.cartItems, // 🔥 MUST
-        itemTotal: billing.itemTotal,
-        deliveryFee: billing.deliveryFee,
-        platformFee: billing.platformFee,
-        gst: billing.tax,
-        totalAmount: billing.grandTotal,
-        paymentMethod: "COD",
-      };
-
-      const res = await PlaceOrder(payload);
-
-      if (res?.success) {
-        // ✅ RESET CHECKOUT CONTEXT
-        resetCheckout();
-
-        // ✅ CLEAR CART (FRONTEND + BACKEND)
-        clearCart();
-        await clearCartApi(userId);
-
-        // ✅ GO TO SUCCESS
-        router.replace("../../../orderSuccess");
-      } else {
-        Alert.alert("Error", res?.message || "Order failed");
-      }
-    } catch (err) {
-      console.log(err);
-      Alert.alert("Error", "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <View style={styles.root}>

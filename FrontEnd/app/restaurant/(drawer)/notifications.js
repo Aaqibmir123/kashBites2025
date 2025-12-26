@@ -14,13 +14,20 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
 
   const restaurantId = user?.restaurantId;
+  console.log(restaurantId,'restaurantId')
 
-  useEffect(() => {
-    if (restaurantId) fetchNotifications();
-  }, [restaurantId]);
+useEffect(() => {
+  if (!user || !user.restaurantId) return;
+      console.log('useContext')
+
+  fetchNotifications();
+}, [user]);
+
+
 
   const fetchNotifications = async () => {
     const res = await getRestaurantNotificationsApi(restaurantId);
+    console.log(res,'notifications')
     if (res?.success) {
       setNotifications(res.data);
     }

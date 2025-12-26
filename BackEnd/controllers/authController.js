@@ -97,3 +97,23 @@ export const verifyOtp = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+
+export const savePushToken = async (req, res) => {
+  try {
+    const { userId, pushToken } = req.body;
+
+    if (!userId || !pushToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "userId or pushToken missing" });
+    }
+
+    await User.findByIdAndUpdate(userId, { pushToken });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
