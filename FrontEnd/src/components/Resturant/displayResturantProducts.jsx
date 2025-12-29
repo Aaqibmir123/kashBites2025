@@ -15,9 +15,9 @@ import { AuthContext } from "../../api/context/authContext.js";
 import {
   getProductsByRestaurantApi,
   deleteProduct,
-} from "../../api/addResturantProducts.js";
+} from "../../api/resturants/addResturantProducts.js";
 import EditProduct from "./editProduct.js";
-import { BASE_IMAGE_URL } from "../../api/constants/endpoints.js";
+import { BASE_IMAGE_URL } from "../../../src/api/apiConfig.js"
 
 export default function ProductsList({ refreshKey }) {
   const { user } = useContext(AuthContext);

@@ -1,51 +1,89 @@
-import { useEffect, useState, useContext } from "react";
-import { TouchableOpacity, View, Text } from "react-native";
+import React, { useEffect, useState, useContext } from "react";
+import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { AuthContext } from "../api/context/authContext";
-import { getRestaurantUnreadCountApi } from "../../src/api/resturants/restaurantNotificationApi";
+import { getUserUnreadNotificationCount } from "../api/user/userNotification";
+import { getResturantUnreadNotificationCount } from "../api/resturants/notification";
 
 export default function NotificationBell() {
   const router = useRouter();
   const { user } = useContext(AuthContext);
+
   const [count, setCount] = useState(0);
 
-  const restaurantId = user?.restaurantId;
-
+  /* ===============================
+     FETCH UNREAD COUNT (ROLE BASED)
+  ================================ */
   const fetchUnreadCount = async () => {
-    if (!restaurantId) return;
-    const res = await getRestaurantUnreadCountApi(restaurantId);
-    if (res?.success) setCount(res.count);
+    try {
+      let res;
+
+      if (user?.role === "user") {
+        res = await getUserUnreadNotificationCount();
+      } else if (user?.role === "restaurant") {
+        res = await getResturantUnreadNotificationCount();
+      }
+
+      if (res?.success) {
+        setCount(res.count);
+      }
+    } catch (err) {
+      console.log("❌ Unread count error:", err.message);
+    }
   };
 
   useEffect(() => {
+    if (!user) return;
     fetchUnreadCount();
-  }, [restaurantId]);
+  }, [user]);
+
+  /* ===============================
+     NAVIGATION (ROLE BASED)
+  ================================ */
+  const handlePress = () => {
+    if (user?.role === "user") {
+      router.push("/user/(drawer)/notifications");
+    } else if (user?.role === "restaurant") {
+      router.push("/restaurant/(drawer)/notifications");
+    }
+  };
 
   return (
-    <TouchableOpacity
-      style={{ marginRight: 15 }}
-      onPress={() => router.push("/restaurant/(drawer)/notifications")}
-    >
+    <TouchableOpacity style={styles.container} onPress={handlePress}>
       <Ionicons name="notifications-outline" size={24} color="#000" />
 
+      {/* 🔴 UNREAD BADGE */}
       {count > 0 && (
-        <View
-          style={{
-            position: "absolute",
-            top: -4,
-            right: -6,
-            backgroundColor: "red",
-            borderRadius: 10,
-            paddingHorizontal: 5,
-            minWidth: 16,
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ color: "#fff", fontSize: 10 }}>{count}</Text>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{count}</Text>
         </View>
       )}
     </TouchableOpacity>
   );
 }
+
+/* ===============================
+   STYLES
+================================ */
+const styles = StyleSheet.create({
+  container: {
+    marginRight: 15,
+  },
+  badge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "tomato",
+    borderRadius: 10,
+    minWidth: 18,
+    paddingHorizontal: 5,
+    alignItems: "center",
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+});

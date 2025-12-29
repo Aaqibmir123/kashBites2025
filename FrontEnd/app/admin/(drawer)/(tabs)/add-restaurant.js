@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { launchImageLibrary } from "react-native-image-picker";
-import { addRestaurantApi } from "../../../../src/api/addResturantApi";
+import { addRestaurantApi } from "../../../../src/api/admin/addResturantApi.js";
 import Toast from "react-native-toast-message";
 import DisplayRestaurants from "../../../../src/components/admin/displayResturants";
 
@@ -64,6 +64,7 @@ export default function AddRestaurant() {
 
   /* ===== SUBMIT ===== */
   const handleSubmit = async () => {
+    console.log("Submitting form:", form);
     try {
       const formData = new FormData();
 
@@ -76,6 +77,7 @@ export default function AddRestaurant() {
       }
 
       const response = await addRestaurantApi(formData);
+      console.log("Add Restaurant Response:", response);
 
       if (response.success) {
         Toast.show({

@@ -1,36 +1,50 @@
 import Order from "../../models/Order.js";
 import mongoose from "mongoose";
 
+/* ===============================
+   GET RESTAURANT ORDERS
+   (TOKEN BASED)
+================================ */
 export const getRestaurantOrders = async (req, res) => {
+  console.log("🔔 getRestaurantOrders called");
   try {
-    const { restaurantId } = req.params;
+    const restaurantId = req.user.restaurantId; // 🔐 from token
     const { status } = req.query;
+    console.log("Restaurant ID:", restaurantId);
+    console.log("Status filter:", status);
+    console.log(req.body,'body')
 
     const filter = { restaurantId };
     if (status) filter.status = status;
 
     const orders = await Order.find(filter).sort({ createdAt: -1 });
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
       data: orders,
     });
   } catch (error) {
-    console.error("Restaurant orders error:", error);
-    res.status(500).json({
+    console.error("❌ Restaurant orders error:", error);
+    return res.status(500).json({
       success: false,
       message: "Server error",
     });
   }
 };
 
-
-
+/* ===============================
+   UPDATE ORDER STATUS
+================================ */
 export const updateOrderStatus = async (req, res) => {
   try {
+    const restaurantId = req.user.restaurantId;
     const { orderId } = req.params;
     const { status } = req.body;
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findOne({
+      _id: orderId,
+      restaurantId,
+    });
 
     if (!order) {
       return res.status(404).json({
@@ -39,29 +53,25 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // 🔁 Update status
     order.status = status;
 
-    /* 🔥 ONLY WHEN ORDER IS DELIVERED */
+    /* ✅ WHEN DELIVERED */
     if (status === "Delivered") {
-      const COMMISSION_PERCENT = 5; // ✅ FIXED 5%
+      const COMMISSION_PERCENT = 5;
 
-      const totalAmount =
-        order.product.price * order.product.qty;
-
+      // ✅ itemTotal already exists
       const commissionAmount =
-        (totalAmount * COMMISSION_PERCENT) / 100;
+        (order.itemTotal * COMMISSION_PERCENT) / 100;
 
       const restaurantEarning =
-        totalAmount - commissionAmount;
+        order.itemTotal - commissionAmount;
 
-      order.totalAmount = totalAmount;
       order.commissionAmount = commissionAmount;
       order.restaurantEarning = restaurantEarning;
       order.deliveredAt = new Date();
     }
 
-    /* ❌ IF REJECTED */
+    /* ❌ WHEN REJECTED */
     if (status === "Rejected") {
       order.rejectedAt = new Date();
     }
@@ -73,21 +83,23 @@ export const updateOrderStatus = async (req, res) => {
       message: "Order status updated successfully",
       data: order,
     });
-
   } catch (error) {
-    console.error("Update order status error:", error);
+    console.error("❌ Update order status error:", error);
     return res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: "Server error",
     });
   }
 };
 
 
-
+/* ===============================
+   GET ORDER STATUS COUNT
+   (DASHBOARD)
+================================ */
 export const getOrderStatusCount = async (req, res) => {
   try {
-    const { restaurantId } = req.params;
+    const restaurantId = req.user.restaurantId;
 
     const counts = await Order.aggregate([
       {
@@ -111,14 +123,14 @@ export const getOrderStatusCount = async (req, res) => {
     };
 
     counts.forEach((item) => {
-      if (item._id === "Pending") result.pending = item.count;
+      if (item._id === "Pending") result.pending += item.count;
 
       if (item._id === "Accepted" || item._id === "Ready") {
         result.accepted += item.count;
       }
 
-      if (item._id === "Rejected") result.rejected = item.count;
-      if (item._id === "Delivered") result.delivered = item.count;
+      if (item._id === "Rejected") result.rejected += item.count;
+      if (item._id === "Delivered") result.delivered += item.count;
     });
 
     return res.status(200).json({
@@ -126,13 +138,10 @@ export const getOrderStatusCount = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Order status count error:", error);
+    console.error("❌ Order status count error:", error);
     return res.status(500).json({
       success: false,
       message: "Server error",
     });
   }
 };
-
-
-

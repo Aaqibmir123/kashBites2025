@@ -1,7 +1,7 @@
 import {
   getAllRestaurantsApi,
   deleteRestaurantApi,
-} from "../../api/addResturantApi";
+} from "../../api/admin/addResturantApi.js";
 
 import { useEffect, useState } from "react";
 import {
@@ -16,7 +16,7 @@ import {
 
 import Toast from "react-native-toast-message";
 import EditRestaurant from "./editRestaurant";
-import { BASE_IMAGE_URL } from "../../api/constants/endpoints";
+import { BASE_IMAGE_URL } from "../../../src/api/apiConfig.js"
 
 export default function DisplayRestaurants() {
   const [restaurants, setRestaurants] = useState([]);
@@ -29,6 +29,7 @@ export default function DisplayRestaurants() {
   const fetchRestaurants = async () => {
     try {
       const response = await getAllRestaurantsApi();
+      console.log(response,'responseresponseresponse')  
       if (response.success) setRestaurants(response.data);
     } catch (error) {
       console.log(error);

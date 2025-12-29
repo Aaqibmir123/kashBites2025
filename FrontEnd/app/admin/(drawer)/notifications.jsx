@@ -15,7 +15,7 @@ import { DrawerActions, useNavigation } from "@react-navigation/native";
 import {
   getAdminNotificationsApi,
   markAdminNotificationReadApi,
-} from "../../../src/api/admin/orderNotification";
+} from "../../../src/api/admin/notifications.js";
 
 export default function AdminNotifications() {
   const router = useRouter();
@@ -30,6 +30,7 @@ export default function AdminNotifications() {
   const fetchNotifications = async () => {
     try {
       const res = await getAdminNotificationsApi();
+      console.log("Admin notifications fetched:", res);
       setNotifications(res.data || []);
     } catch (err) {
       console.log("Admin notification error:", err.message);
@@ -56,26 +57,35 @@ export default function AdminNotifications() {
 
   /* ================= HANDLE CLICK ================= */
 
-  const handleNotificationClick = async (item) => {
-    try {
-      // mark as read
-      if (!item.read) {
-        await markAdminNotificationReadApi(item._id);
-      }
-
-      // local update
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n._id === item._id ? { ...n, read: true } : n
-        )
-      );
-
-      // open order detail
-      router.push(`/admin/orders/${item.orderId}`);
-    } catch (err) {
-      console.log("Mark read error:", err.message);
+ const handleNotificationClick = async (item) => {
+  try {
+    // already read → just navigate later
+    if (item.read) {
+      // router.push(`/admin/orders/${item.orderId}`);
+      return;
     }
-  };
+
+    const res = await markAdminNotificationReadApi(item._id);
+
+    // ✅ response check
+    if (!res?.success) {
+      throw new Error("Failed to mark notification as read");
+    }
+
+    // ✅ local update ONLY after success
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n._id === item._id ? { ...n, read: true } : n
+      )
+    );
+
+    // open order detail
+    // router.push(`/admin/orders/${item.orderId}`);
+  } catch (err) {
+    console.log("Mark read error:", err.message);
+  }
+};
+
 
   /* ================= RENDER ITEM ================= */
 

@@ -6,19 +6,12 @@ import Notification from "../../models/Notification.js";
 ================================ */
 export const getRestaurantNotifications = async (req, res) => {
   try {
-    const { restaurantId } = req.query;
-
-    if (!restaurantId) {
-      return res.status(400).json({
-        success: false,
-        message: "restaurantId is required",
-      });
-    }
+    const restaurantId = req.user.restaurantId; // ✅ FIX
 
     const notifications = await Notification.find({
       receiverType: "RESTAURANT",
-      restaurantId: restaurantId,
-    });
+      restaurantId,
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -33,13 +26,14 @@ export const getRestaurantNotifications = async (req, res) => {
   }
 };
 
+
 /* ===============================
    MARK NOTIFICATION AS READ
 ================================ */
 export const markRestaurantNotificationRead = async (req, res) => {
   try {
     const { notificationId } = req.body;
-    console.log("read");
+    const restaurantId = req.user.restaurantId;
 
     if (!notificationId) {
       return res.status(400).json({
@@ -48,9 +42,14 @@ export const markRestaurantNotificationRead = async (req, res) => {
       });
     }
 
-    await Notification.findByIdAndUpdate(notificationId, {
-      read: true,
-    });
+    await Notification.findOneAndUpdate(
+      {
+        _id: notificationId,
+        restaurantId,              // 🔐 ownership check
+        receiverType: "RESTAURANT",
+      },
+      { read: true }
+    );
 
     res.status(200).json({
       success: true,
@@ -65,23 +64,17 @@ export const markRestaurantNotificationRead = async (req, res) => {
   }
 };
 
+
 /* ===============================
    GET UNREAD COUNT (🔔 BADGE)
 ================================ */
 export const getRestaurantUnreadCount = async (req, res) => {
   try {
-    const { restaurantId } = req.query;
-
-    if (!restaurantId) {
-      return res.status(400).json({
-        success: false,
-        message: "restaurantId is required",
-      });
-    }
+    const restaurantId = req.user.restaurantId; // ✅ FIX
 
     const count = await Notification.countDocuments({
       receiverType: "RESTAURANT",
-      restaurantId: restaurantId, // ✅ FIXED
+      restaurantId,
       read: false,
     });
 
@@ -97,3 +90,4 @@ export const getRestaurantUnreadCount = async (req, res) => {
     });
   }
 };
+

@@ -8,11 +8,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { getRestaurantOrdersApi } from "../../../../src/api/resturants/orders";
 import { AuthContext } from "../../../../src/api/context/authContext";
-import { BASE_IMAGE_URL } from "../../../../src/api/constants/endpoints";
-import { useFocusEffect } from "@react-navigation/native";
+import { BASE_IMAGE_URL } from "../../../../src/api/apiConfig";
 import AppHeader from "../../../../src/components/AppHeaderIcon";
 
 export default function DeliveredOrders() {
@@ -21,7 +21,6 @@ export default function DeliveredOrders() {
   const [loading, setLoading] = useState(true);
 
   /* ================= FETCH DELIVERED ORDERS ================= */
-
   useFocusEffect(
     useCallback(() => {
       if (user?.restaurantId) {
@@ -33,8 +32,7 @@ export default function DeliveredOrders() {
   const fetchDeliveredOrders = async () => {
     try {
       setLoading(true);
-
-      const res = await getRestaurantOrdersApi(user.restaurantId, "Delivered");
+      const res = await getRestaurantOrdersApi("Delivered");
 
       if (res?.success) {
         setOrders(res.data);
@@ -42,20 +40,20 @@ export default function DeliveredOrders() {
         setOrders([]);
       }
     } catch (error) {
-      console.log("Delivered orders error:", error);
+      console.log("❌ Delivered orders error:", error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  /* ================= LOADING ================= */
   if (loading) {
     return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
   }
 
   return (
-    <View>
-      <AppHeader/>
+    <View style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
+      <AppHeader />
+
       <FlatList
         data={orders}
         keyExtractor={(item) => item._id}
@@ -65,7 +63,7 @@ export default function DeliveredOrders() {
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
-            {/* ===== TOP ROW ===== */}
+            {/* ===== CUSTOMER ===== */}
             <View style={styles.topRow}>
               <View>
                 <Text style={styles.customer}>{item.address?.name}</Text>
@@ -80,29 +78,37 @@ export default function DeliveredOrders() {
             {/* ===== ADDRESS ===== */}
             <View style={styles.addressBox}>
               <Ionicons name="location-outline" size={14} color="#444" />
-              <Text style={styles.address}>{item.address?.address}</Text>
+              <Text style={styles.address}>
+                {item.address?.address}
+              </Text>
             </View>
 
-            {/* ===== PRODUCT ===== */}
-            <View style={styles.row}>
-              <Image
-                source={{
-                  uri: item.product?.image
-                    ? BASE_IMAGE_URL + item.product.image
-                    : "https://via.placeholder.com/60",
-                }}
-                style={styles.image}
-              />
+            {/* ===== ITEMS (NO PRICE HERE) ===== */}
+            {item.items?.map((prod, index) => (
+              <View key={index} style={styles.row}>
+                <Image
+                  source={{
+                    uri: prod.image
+                      ? BASE_IMAGE_URL + prod.image
+                      : "https://via.placeholder.com/60",
+                  }}
+                  style={styles.image}
+                />
 
-              <View style={{ flex: 1 }}>
                 <Text style={styles.product}>
-                  {item.product?.name} × {item.product?.qty}
+                  {prod.name} × {prod.qty}
                 </Text>
-                <Text style={styles.price}>₹{item.product?.price}</Text>
               </View>
+            ))}
+
+            {/* ===== FINAL PRICE ONLY ===== */}
+            <View style={styles.totalBox}>
+              <Text style={styles.totalText}>
+                Total Paid: ₹{item.totalAmount}
+              </Text>
             </View>
 
-            {/* ===== FOOTER ===== */}
+            {/* ===== TIME ===== */}
             <Text style={styles.time}>
               🕒 {new Date(item.createdAt).toLocaleString()}
             </Text>
@@ -117,11 +123,11 @@ export default function DeliveredOrders() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#fff",
     borderRadius: 14,
     padding: 14,
     marginBottom: 14,
-    elevation: 2,
+    elevation: 3,
   },
   topRow: {
     flexDirection: "row",
@@ -143,7 +149,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   statusText: {
-    color: "#555",
+    color: "#444",
     fontSize: 12,
     fontWeight: "bold",
   },
@@ -164,22 +170,26 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   image: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
     borderRadius: 10,
     marginRight: 12,
   },
   product: {
-    fontWeight: "600",
     fontSize: 14,
+    fontWeight: "600",
   },
-  price: {
-    marginTop: 6,
-    color: "green",
+  totalBox: {
+    marginTop: 14,
+    alignItems: "flex-end",
+  },
+  totalText: {
+    fontSize: 16,
     fontWeight: "bold",
+    color: "#000",
   },
   time: {
-    marginTop: 10,
+    marginTop: 8,
     fontSize: 12,
     color: "#777",
     textAlign: "right",

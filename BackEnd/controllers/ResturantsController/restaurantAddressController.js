@@ -110,9 +110,6 @@ export const createOrUpdateRestaurantAddress = async (req, res) => {
   }
 };
 
-
-
-
 export const getRestaurantById = async (req, res) => {
   try {
     const { restaurantId } = req.params;

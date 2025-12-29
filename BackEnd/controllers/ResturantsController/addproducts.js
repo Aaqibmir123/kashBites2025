@@ -1,8 +1,6 @@
 import ResturantProduct from "../../models/resturants/addProducts.js";
 
 export const createProduct = async (req, res) => {
-
-  console.log(req.body,'hello products')
   try {
     const {
       name,

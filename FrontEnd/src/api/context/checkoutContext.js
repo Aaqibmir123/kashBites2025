@@ -15,7 +15,9 @@ export const CheckoutProvider = ({ children }) => {
 
   /* ================= BILLING ================= */
   const [billing, setBilling] = useState({
-    cartItems: [],          // 🔥 IMPORTANT
+    cartItems: [], // 🔥 IMPORTANT
+    restaurantId: null,
+
     itemTotal: 0,
     deliveryFee: 30,
     platformFee: 5,
@@ -35,7 +37,7 @@ export const CheckoutProvider = ({ children }) => {
     const grandTotal = itemTotal + deliveryFee + platformFee + tax + tip;
 
     setBilling((prev) => ({
-      ...prev,        // 🔥 cartItems safe
+      ...prev, // 🔥 cartItems safe
       itemTotal,
       deliveryFee,
       platformFee,

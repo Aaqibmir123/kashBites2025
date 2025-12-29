@@ -1,18 +1,25 @@
 import {
   BASE_URL,
   RESTAURANT_ORDERS,
-} from "../constants/resturants/orderEndPoints";
+} from "../constants/resturants/endPoints";
+import { getAuthHeaders } from "../../api/authHeader";
 
-export const getRestaurantOrdersApi = async (restaurantId, status = "") => {
+/* ================= GET RESTAURANT ORDERS ================= */
+export const getRestaurantOrdersApi = async (status = "") => {
   try {
-    const url = `${BASE_URL}${RESTAURANT_ORDERS.GET_ORDERS}/${restaurantId}${
+    const headers = await getAuthHeaders(true);
+
+    const url = `${BASE_URL}${RESTAURANT_ORDERS.GET_ORDERS}${
       status ? `?status=${status}` : ""
     }`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      method: "GET",
+      headers, // 🔐 token
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch orders`);
+      throw new Error("Failed to fetch orders");
     }
 
     return await response.json();
@@ -22,13 +29,17 @@ export const getRestaurantOrdersApi = async (restaurantId, status = "") => {
   }
 };
 
+/* ================= UPDATE ORDER STATUS ================= */
 export const updateOrderStatusApi = async (orderId, status) => {
   try {
+    const headers = await getAuthHeaders(true);
+
     const response = await fetch(
       `${BASE_URL}${RESTAURANT_ORDERS.UPDATE_STATUS}/${orderId}/status`,
       {
         method: "PATCH",
         headers: {
+          ...headers,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ status }),
@@ -36,7 +47,7 @@ export const updateOrderStatusApi = async (orderId, status) => {
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to update order status`);
+      throw new Error("Failed to update order status");
     }
 
     return await response.json();
@@ -46,10 +57,17 @@ export const updateOrderStatusApi = async (orderId, status) => {
   }
 };
 
-export const getOrderStatusCountApi = async (restaurantId) => {
+/* ================= ORDER STATUS COUNT ================= */
+export const getOrderStatusCountApi = async () => {
   try {
+    const headers = await getAuthHeaders(true);
+
     const response = await fetch(
-      `${BASE_URL}${RESTAURANT_ORDERS.STATUS_COUNT}/${restaurantId}`
+      `${BASE_URL}${RESTAURANT_ORDERS.STATUS_COUNT}`,
+      {
+        method: "GET",
+        headers, // 🔐 token
+      }
     );
 
     if (!response.ok) {

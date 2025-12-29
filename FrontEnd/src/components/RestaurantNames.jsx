@@ -9,9 +9,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { getAllRestaurantsApi } from "../api/addResturantApi";
-import { BASE_IMAGE_URL } from "../api/constants/endpoints";
-
+import { BASE_IMAGE_URL } from "../api/apiConfig.js";
+import { getResturantList } from "../api/user/getResturantList.js";
 export default function Restaurant() {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +22,8 @@ export default function Restaurant() {
 
   const fetchRestaurants = async () => {
     try {
-      const response = await getAllRestaurantsApi();
+      const response = await getResturantList();
+      console.log("Fetched restaurants:", response);
       if (response?.success) {
         setRestaurants(response.data);
       }
@@ -36,7 +36,7 @@ export default function Restaurant() {
 
   const handlePress = (item) => {
     router.push({
-      pathname: "/restaurant/products",
+      pathname: "/user/products",
       params: {
         restaurantId: item._id,
         name: item.name,
@@ -70,7 +70,9 @@ export default function Restaurant() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Popular Restaurants</Text>
+      <Text style={styles.heading}>
+        <Text style={styles.headerTitle}>Popular Restaurants</Text>
+      </Text>
 
       <FlatList
         data={restaurants}
@@ -86,16 +88,17 @@ export default function Restaurant() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-  },
-
   heading: {
-    fontSize: 20,
-    fontWeight: "700",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: "#22c55e",
     marginBottom: 14,
-    color: "#1F2937",
+   
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
   },
 
   card: {

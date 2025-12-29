@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "KashBites",
+    "slug": "kashbites",
+    "version": "1.0.0",
+    "orientation": "portrait",
+
+    "icon": "./FrontEnd/assets/images/kashbites.png",
+
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#22c55e"
+    },
+
+    "android": {
+      "package": "com.anonymous.fullstackroot"
+    },
+
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_YOUR_PROJECT_ID"
+      }
+    }
+  }
+}

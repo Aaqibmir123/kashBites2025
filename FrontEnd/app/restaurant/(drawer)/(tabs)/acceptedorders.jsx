@@ -9,26 +9,28 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 import {
   getRestaurantOrdersApi,
   updateOrderStatusApi,
 } from "../../../../src/api/resturants/orders";
 import { AuthContext } from "../../../../src/api/context/authContext";
-import { BASE_IMAGE_URL } from "../../../../src/api/constants/endpoints";
-import { useFocusEffect } from "@react-navigation/native";
+import { BASE_IMAGE_URL } from "../../../../src/api/apiConfig";
 import AppHeader from "../../../../src/components/AppHeaderIcon";
 
 export default function AcceptedOrders() {
   const { user } = useContext(AuthContext);
 
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  /* ================= FETCH ACCEPTED ORDERS ================= */
+  /* ===============================
+     FETCH ACCEPTED ORDERS
+  ================================ */
   useFocusEffect(
     useCallback(() => {
-      if (user?.restaurantId) {
+      if (user) {
         fetchAcceptedOrders();
       }
     }, [user])
@@ -38,7 +40,8 @@ export default function AcceptedOrders() {
     try {
       setLoading(true);
 
-      const res = await getRestaurantOrdersApi(user.restaurantId, "Accepted");
+      // ✅ token-based, ONLY status
+      const res = await getRestaurantOrdersApi("Accepted");
 
       if (res?.success) {
         setOrders(res.data);
@@ -46,30 +49,34 @@ export default function AcceptedOrders() {
         setOrders([]);
       }
     } catch (error) {
-      console.log("Accepted orders error:", error);
+      console.log("Accepted orders error:", error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  /* ================= MARK AS READY ================= */
+  /* ===============================
+     MARK AS READY
+  ================================ */
   const markAsReady = async (orderId) => {
     try {
       await updateOrderStatusApi(orderId, "Ready");
       fetchAcceptedOrders(); // refresh list
     } catch (error) {
-      console.log("Mark as ready error:", error);
+      console.log("Mark as ready error:", error.message);
     }
   };
 
-  /* ================= LOADING ================= */
+  /* ===============================
+     LOADING
+  ================================ */
   if (loading) {
     return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
-      <AppHeader  />
+      <AppHeader title="Accepted Orders" />
 
       <FlatList
         data={orders}
@@ -95,26 +102,34 @@ export default function AcceptedOrders() {
             {/* ===== ADDRESS ===== */}
             <View style={styles.addressBox}>
               <Ionicons name="location-outline" size={14} color="#444" />
-              <Text style={styles.address}>{item.address?.address}</Text>
+              <Text style={styles.address}>
+                {item.address?.house}, {item.address?.village},{" "}
+                {item.address?.pincode}
+              </Text>
             </View>
 
-            {/* ===== PRODUCT ===== */}
-            <View style={styles.row}>
-              <Image
-                source={{
-                  uri: item.product?.image
-                    ? BASE_IMAGE_URL + item.product.image
-                    : "https://via.placeholder.com/60",
-                }}
-                style={styles.image}
-              />
+            {/* ===== ITEMS ===== */}
+            {item.items.map((prod) => (
+              <View key={prod._id} style={styles.row}>
+                <Image
+                  source={{
+                    uri: `${BASE_IMAGE_URL}${prod.image}`,
+                  }}
+                  style={styles.image}
+                />
 
-              <View style={{ flex: 1 }}>
-                <Text style={styles.product}>
-                  {item.product?.name} × {item.product?.qty}
-                </Text>
-                <Text style={styles.price}>₹{item.product?.price}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.product}>
+                    {prod.name} × {prod.qty}
+                  </Text>
+                </View>
               </View>
+            ))}
+
+            {/* ===== TOTAL ===== */}
+            <View style={styles.totalBox}>
+              <Text style={styles.totalLabel}>Total Amount</Text>
+              <Text style={styles.totalAmount}>₹{item.totalAmount}</Text>
             </View>
 
             {/* ===== ACTION ===== */}
@@ -132,7 +147,9 @@ export default function AcceptedOrders() {
   );
 }
 
-/* ================= STYLES ================= */
+/* ===============================
+   STYLES
+================================ */
 
 const styles = StyleSheet.create({
   card: {
@@ -187,15 +204,28 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 10,
     marginRight: 12,
+    backgroundColor: "#eee",
   },
   product: {
     fontWeight: "600",
     fontSize: 14,
   },
-  price: {
-    marginTop: 6,
-    color: "green",
-    fontWeight: "bold",
+  totalBox: {
+    marginTop: 12,
+    backgroundColor: "#111",
+    borderRadius: 10,
+    padding: 12,
+    alignItems: "center",
+  },
+  totalLabel: {
+    color: "#ccc",
+    fontSize: 12,
+  },
+  totalAmount: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 2,
   },
   readyBtn: {
     flexDirection: "row",

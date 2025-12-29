@@ -69,8 +69,13 @@ const productSchema = new mongoose.Schema(
       default: 0,
     },
 
-    image: {
+    image: {  
       type: String,
+    },
+    restaurantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant", // 👈 restaurant model ka naam
+      required: true,
     },
   },
   { timestamps: true }

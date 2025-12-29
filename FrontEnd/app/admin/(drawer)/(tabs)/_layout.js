@@ -18,8 +18,8 @@ export default function TabsLayout() {
         }}
         listeners={{
           tabPress: (e) => {
-            e.preventDefault();        // ❌ route change
-            navigation.openDrawer();  // ✅ open drawer
+            e.preventDefault(); // ❌ route change
+            navigation.openDrawer(); // ✅ open drawer
           },
         }}
       />
@@ -30,6 +30,20 @@ export default function TabsLayout() {
           title: "Orders",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="SupportScreen"
+        options={{
+          title: "Chat",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons
+              name="chatbubble-ellipses-outline"
+              size={size}
+              color={color}
+            />
           ),
         }}
       />

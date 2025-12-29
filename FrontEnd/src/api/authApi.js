@@ -1,4 +1,4 @@
-import { BASE_URL, AUTH } from "./constants/endpoints.js";
+import { BASE_URL, AUTH } from "../api/constants/auth/endPoint";
 
 export const sendOtpApi = async (phone) => {
   try {

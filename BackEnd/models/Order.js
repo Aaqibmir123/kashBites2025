@@ -8,7 +8,6 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
-    // 🔥 ADDRESS SNAPSHOT (IMPORTANT)
     address: {
       name: { type: String, required: true },
       phone: { type: String, required: true },

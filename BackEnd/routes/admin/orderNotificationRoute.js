@@ -1,18 +1,15 @@
 import express from "express";
 import {
   getAdminNotifications,
-  getAdminOrders,
-  markAdminNotificationRead
-} from "../../controllers/admin/orderNotification.js";
+  markAdminNotificationRead,
+} from "../../controllers/admin/notificationController.js";
 
 const router = express.Router();
 
 /* 🔔 Admin Notifications */
-router.get("/notifications", getAdminNotifications);
+router.get("/", getAdminNotifications);
 
-/* 📦 Admin Orders */
-router.get("/orders", getAdminOrders);
-router.patch("/notifications/:notificationId/read", markAdminNotificationRead);
-
+/* ✅ Mark as read */
+router.patch("/read", markAdminNotificationRead);
 
 export default router;

@@ -10,9 +10,9 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 import { launchImageLibrary } from "react-native-image-picker";
-import { updateRestaurantApi } from "../../api/addResturantApi.js";
+import { updateRestaurantApi } from "../../api/admin/addResturantApi.js";
 import Toast from "react-native-toast-message";
-import { BASE_IMAGE_URL } from "../../api/constants/endpoints";
+import { BASE_IMAGE_URL } from "../../../src/api/apiConfig.js"
 
 // ===== base64 → blob =====
 const base64ToBlob = (base64, mime) => {

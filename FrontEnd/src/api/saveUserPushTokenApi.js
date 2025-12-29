@@ -1,4 +1,4 @@
-import { BASE_URL, AUTH } from "./constants/endpoints";
+import { BASE_URL, AUTH } from "./constants/user/endpoints";
 
 export const saveUserPushTokenApi = async (userId, pushToken) => {
   try {

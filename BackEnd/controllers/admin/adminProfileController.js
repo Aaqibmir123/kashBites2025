@@ -3,57 +3,62 @@ import User from "../../models/userModel.js";
 
 export const updateAdminProfile = async (req, res) => {
   try {
-    const { userId, name,email } = req.body;
+    const adminId = req.user.userId || req.user._id; // ✅ JWT
 
-    let imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+    const { name, email } = req.body || {};
 
-    let profile = await Profile.findOne({ user: userId });
+    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
+    let profile = await Profile.findOne({ user: adminId });
 
     if (profile) {
-      profile.name = name || profile.name;
-      profile.email = email || profile.email;
+      if (name) profile.name = name;
+      if (email) profile.email = email;
       if (imagePath) profile.image = imagePath;
       await profile.save();
     } else {
       profile = await Profile.create({
-        user: userId,
+        user: adminId,
         name,
         email,
-        
-        image: imagePath
+        image: imagePath,
       });
     }
 
-    res.json({ message: "Profile saved", profile });
-
+    res.json({
+      success: true,
+      message: "Admin profile updated",
+      data: profile,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("UPDATE ADMIN PROFILE ERROR:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
-
-
 export const getAdminProfile = async (req, res) => {
   try {
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ message: "userId required" });
+    const adminId = req.user.userId || req.user._id; // 🔥 FIX
 
-    const user = await User.findById(userId).select("-otp");
-    console.log(user,'user')
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const user = await User.findById(adminId).select("-otp");
+    if (!user) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
 
-    const profile = await Profile.findOne({ user: userId });
+    const profile = await Profile.findOne({ user: adminId });
 
-    const merged = {
-      _id: user._id,
-      phone: user.phone || "",
-      email: profile.email || "",
-      name: profile?.name || "",
-      image: profile?.image || ""
-    };
-
-    return res.json(merged);
+    return res.json({
+      success: true,
+      data: {
+        _id: user._id,
+        phone: user.phone || "",
+        email: profile?.email || "",
+        name: profile?.name || "",
+        image: profile?.image || "",
+        role: user.role,
+      },
+    });
   } catch (err) {
-    console.log("GET PROFILE ERROR:", err);
-    return res.status(500).json({ message: err.message });
+    console.error("GET ADMIN PROFILE ERROR:", err);
+    res.status(500).json({ message: err.message });
   }
 };

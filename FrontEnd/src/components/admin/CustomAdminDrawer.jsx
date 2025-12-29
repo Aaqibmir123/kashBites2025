@@ -1,16 +1,10 @@
 import React, { useContext } from "react";
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { AuthContext } from "@/src/api/context/authContext";
-import { BASE_IMAGE_URL } from "@/src/api/constants/endpoints";
+import { BASE_IMAGE_URL } from "../../../src/api/apiConfig.js";
 
 export default function CustomAdminDrawer(props) {
   const router = useRouter();
@@ -21,10 +15,9 @@ export default function CustomAdminDrawer(props) {
     router.replace(route);
   };
 
-  const profileImage =
-    user?.image
-      ? `${BASE_IMAGE_URL}${user.image}`
-      : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+  const profileImage = user?.image
+    ? `${BASE_IMAGE_URL}${user.image}`
+    : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
 
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
@@ -39,18 +32,14 @@ export default function CustomAdminDrawer(props) {
       <View style={styles.header}>
         <Image source={{ uri: profileImage }} style={styles.avatar} />
 
-        <Text style={styles.name}>
-          {user?.name || "Admin"}
-        </Text>
+        <Text style={styles.name}>{user?.name || "Admin"}</Text>
 
-        <Text style={styles.email}>
-          {user?.email || "admin@kashbites.com"}
-        </Text>
+        <Text style={styles.email}>{user?.email || "admin@kashbites.com"}</Text>
       </View>
 
       {/* ================= MENU ================= */}
       <View style={{ marginTop: 20 }}>
-         <DrawerItem
+        <DrawerItem
           icon="speedometer-outline"
           title="Dashboard"
           onPress={() => goTo("/admin/dashboard")}
@@ -60,15 +49,11 @@ export default function CustomAdminDrawer(props) {
           title="Profile"
           onPress={() => goTo("/admin/profile")}
         />
-         <DrawerItem
+        <DrawerItem
           icon="person-outline"
           title="Notification"
           onPress={() => goTo("/admin/notifications")}
         />
-
-       
-
-      
       </View>
 
       {/* ================= LOGOUT ================= */}
@@ -95,11 +80,7 @@ function DrawerItem({ icon, title, onPress, danger }) {
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Ionicons
-        name={icon}
-        size={22}
-        color={danger ? "#E53935" : "#333"}
-      />
+      <Ionicons name={icon} size={22} color={danger ? "#E53935" : "#333"} />
 
       <Text style={[styles.menuText, danger && styles.logoutText]}>
         {title}

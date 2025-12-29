@@ -1,5 +1,5 @@
 import ProfileScreen from "../../../src/components/profile/ProfileScreen";
-import { getProfileApi, updateProfileApi } from "../../../src/api/profileApi";
+import { getResturantProfileApi, updateResturantProfileApi } from "../../../src/api/resturants/profile.js";
 import { useNavigation } from "expo-router";
 
 export default function RestaurantProfile() {
@@ -7,8 +7,8 @@ export default function RestaurantProfile() {
 
   return (
     <ProfileScreen
-      getProfileApi={getProfileApi}
-      updateProfileApi={updateProfileApi}
+      getProfileApi={getResturantProfileApi}
+      updateProfileApi={updateResturantProfileApi}
       onBack={() => navigation.openDrawer()}
     />
   );

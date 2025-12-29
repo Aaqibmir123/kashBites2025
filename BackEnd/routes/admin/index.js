@@ -1,29 +1,27 @@
 import express from "express";
 
-/* controllers */
-import { getAdminDashboard } from "../../controllers/admin/adminDashboardController.js";
-import {
-  getAdminNotifications,
-  getAdminOrders,
-  markAdminNotificationRead,
-} from "../../controllers/admin/orderNotification.js";
-import { getAdminLiveOrders } from "../../controllers/admin/adminLiveOrdersController.js";
+import adminDashboardRoutes from "./adminDashboardRoutes.js";
+import adminLiveOrdersRoutes from "./adminLiveOrdersRoutes.js";
+import createResturants from "./createResturants.js";
+
+import authMiddleware from "../../middleware/authMiddleware.js";
+import { allowRoles } from "../../middleware/roleMiddleware.js";
+import profile from "./profile.js";
+import orderNotificationRoute from "./orderNotificationRoute.js";
+import support from "./support.js";
 
 const router = express.Router();
 
-/* ===== ADMIN ROUTES (STATIC FIRST) ===== */
+/* 🔐 ADMIN SECURITY LAYER */
+router.use(authMiddleware);
+router.use(allowRoles("admin"));
 
-// Dashboard
-router.get("/dashboard", getAdminDashboard);
-
-// Live Orders
-router.get("/live-orders", getAdminLiveOrders);
-
-// Orders (all status + filter)
-router.get("/orders", getAdminOrders);
-
-// Notifications
-router.get("/notifications", getAdminNotifications);
-router.patch("/notifications/:notificationId/read", markAdminNotificationRead);
+/* ===== ADMIN ROUTES ===== */
+router.use("/dashboard", adminDashboardRoutes);
+router.use("/orders", adminLiveOrdersRoutes);
+router.use("/createResturants", createResturants);
+router.use("/notifications", orderNotificationRoute);
+router.use("/profile", profile);
+router.use("/support", support);
 
 export default router;

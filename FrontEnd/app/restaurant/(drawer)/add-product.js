@@ -13,7 +13,7 @@ import {
 import { launchImageLibrary } from "react-native-image-picker";
 import Toast from "react-native-toast-message";
 
-import { addResturantProductsApi } from "../../../src/api/addResturantProducts";
+import { addResturantProductsApi } from "../../../src/api/resturants/addResturantProducts"
 import { AuthContext } from "../../../src/api/context/authContext";
 import ProductsList from "../../../src/components/Resturant/displayResturantProducts";
 import AppHeader from "../../../src/components/AppHeaderIcon";

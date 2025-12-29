@@ -13,7 +13,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import Toast from "react-native-toast-message";
 import { AuthContext } from "../../api/context/authContext";
-import { updateResturantProductApi } from "../../api/addResturantProducts.js";
+import { updateResturantProductApi } from "../../api/resturants/addResturantProducts.js";
 
 export default function EditProduct({ product, close, refreshList }) {
   const { user } = useContext(AuthContext);

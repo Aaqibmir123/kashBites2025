@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useContext } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 
 import AppHeader from "../../../src/components/AppHeaderIcon";
 import { AuthContext } from "../../../src/api/context/authContext";
@@ -12,50 +18,66 @@ import {
 export default function Notifications() {
   const { user } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const restaurantId = user?.restaurantId;
-  console.log(restaurantId,'restaurantId')
-
-useEffect(() => {
-  if (!user || !user.restaurantId) return;
-      console.log('useContext')
-
-  fetchNotifications();
-}, [user]);
-
-
-
+  /* ===============================
+     FETCH NOTIFICATIONS
+  ================================ */
   const fetchNotifications = async () => {
-    const res = await getRestaurantNotificationsApi(restaurantId);
-    console.log(res,'notifications')
-    if (res?.success) {
-      setNotifications(res.data);
+    try {
+      setLoading(true);
+      const res = await getRestaurantNotificationsApi();
+
+      if (res?.success) {
+        setNotifications(res.data);
+      }
+    } catch (err) {
+      console.log("Fetch notifications error:", err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const markAsRead = async (id) => {
-    console.log(id,'readed')
-    await markRestaurantNotificationReadApi(id);
-    fetchNotifications(); 
+  useEffect(() => {
+    if (!user) return;
+    fetchNotifications();
+  }, [user]);
+
+  /* ===============================
+     MARK AS READ
+  ================================ */
+  const markAsRead = async (notificationId) => {
+    try {
+      // 🔥 Optimistic UI (instant dot removal)
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
+      );
+
+      await markRestaurantNotificationReadApi(notificationId);
+    } catch (err) {
+      console.log("Mark read error:", err.message);
+      // fallback reload
+      fetchNotifications();
+    }
   };
 
+  /* ===============================
+     RENDER ITEM
+  ================================ */
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.card,
-        item.read === false && styles.unread,
-      ]}
-      onPress={() => markAsRead(item._id)}
-    >
-      <Text style={styles.title}>
-        {item.title || "New Notification"}
-      </Text>
+    <TouchableOpacity style={styles.card} onPress={() => markAsRead(item._id)}>
+      <View style={styles.row}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>{item.title || "New Notification"}</Text>
 
-      <Text style={styles.message}>
-        {item.message || "You have a new update"}
-      </Text>
+          <Text style={styles.message}>
+            {item.message || "You have a new update"}
+          </Text>
+        </View>
 
-      {!item.read && <Text style={styles.badge}>NEW</Text>}
+        {/* 🔴 RED DOT (ONLY IF UNREAD) */}
+        {!item.read && <View style={styles.redDot} />}
+      </View>
     </TouchableOpacity>
   );
 
@@ -68,14 +90,17 @@ useEffect(() => {
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
         contentContainerStyle={{ padding: 12 }}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No notifications</Text>
-        }
+        refreshing={loading}
+        onRefresh={fetchNotifications}
+        ListEmptyComponent={<Text style={styles.empty}>No notifications</Text>}
       />
     </View>
   );
 }
 
+/* ===============================
+   STYLES
+================================ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -89,9 +114,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  unread: {
-    borderLeftWidth: 4,
-    borderLeftColor: "tomato",
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   title: {
@@ -106,11 +131,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  badge: {
-    marginTop: 6,
-    color: "tomato",
-    fontSize: 11,
-    fontWeight: "bold",
+  redDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "tomato",
+    marginLeft: 10,
   },
 
   empty: {

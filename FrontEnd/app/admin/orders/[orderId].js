@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { getAdminOrdersApi } from "../../../src/api/admin/orderNotification";
-import { BASE_IMAGE_URL } from "../../../src/api/constants/endpoints";
+import { BASE_IMAGE_URL } from "../../../src/api/apiConfig.js"
 import { DrawerActions, useNavigation } from "@react-navigation/native";
 
 export default function AdminOrderDetail() {

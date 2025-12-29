@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { launchImageLibrary } from "react-native-image-picker";
 import Toast from "react-native-toast-message";
-import { BASE_IMAGE_URL } from "@/src/api/constants/endpoints";
+import { BASE_IMAGE_URL } from "../../../src/api/apiConfig.js";
 import { Ionicons } from "@expo/vector-icons";
 import { AuthContext } from "@/src/api/context/authContext";
 
@@ -33,7 +33,6 @@ export default function ProfileScreen({
   onBack,
 }) {
   const { user, updateUser } = useContext(AuthContext);
-  const userId = user?._id;
 
   const [profile, setProfile] = useState({
     name: "",
@@ -52,21 +51,23 @@ export default function ProfileScreen({
 
   const fetchProfile = async () => {
     try {
-      const p = await getProfileApi({ userId });
+      const res = await getProfileApi();
+      const p = res?.data;
+      if (!p) return;
 
       updateUser({
         name: p.name,
         email: p.email,
-        image: p?.image,
+        image: p.image,
       });
 
       setProfile({
-        name: p?.name || "",
-        email: p?.email || "",
+        name: p.name || "",
+        email: p.email || "",
         phone: user?.phone || "",
       });
 
-      if (p?.image) {
+      if (p.image) {
         setImageUri(`${BASE_IMAGE_URL}${p.image}`);
       }
     } catch (err) {
@@ -88,15 +89,11 @@ export default function ProfileScreen({
     setImageUri(result.assets[0].uri);
   };
 
-  /* ================= UPDATE PROFILE (BLOB) ================= */
+  /* ================= UPDATE PROFILE ================= */
   const handleUpdate = async () => {
-    if (!userId) return;
-
     setLoading(true);
-
     try {
       const formData = new FormData();
-      formData.append("userId", userId);
       formData.append("name", profile.name);
       formData.append("email", profile.email);
 
@@ -105,7 +102,6 @@ export default function ProfileScreen({
           selectedImage.base64,
           selectedImage.type || "image/jpeg"
         );
-
         formData.append("image", blob, "profile.jpg");
       }
 
@@ -119,11 +115,9 @@ export default function ProfileScreen({
       fetchProfile();
     } catch (err) {
       console.log("UPDATE PROFILE ERROR 👉", err);
-
       Toast.show({
         type: "error",
         text1: "Update Failed",
-        text2: "Something went wrong",
       });
     } finally {
       setLoading(false);
@@ -131,7 +125,7 @@ export default function ProfileScreen({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.root}>
       {/* ================= HEADER ================= */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack}>
@@ -153,7 +147,7 @@ export default function ProfileScreen({
       </View>
 
       {/* ================= FORM ================= */}
-      <View style={styles.form}>
+      <ScrollView contentContainerStyle={styles.form}>
         <TextInput
           value={profile.name}
           onChangeText={(v) => setProfile({ ...profile, name: v })}
@@ -177,40 +171,58 @@ export default function ProfileScreen({
         <TouchableOpacity
           style={[styles.btn, loading && styles.btnDisabled]}
           onPress={handleUpdate}
+          disabled={loading}
         >
           <Text style={styles.btnText}>
             {loading ? "Updating..." : "Update Profile"}
           </Text>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 /* ================= STYLES ================= */
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: "#f5f5f5" },
+  root: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
 
+  /* HEADER */
   header: {
-    backgroundColor: "#E6005C",
+    backgroundColor: "#22c55e", // ✅ GREEN THEME
     paddingVertical: 45,
     alignItems: "center",
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
   },
 
-  backBtn: { position: "absolute", left: 20, top: 45 },
+  backBtn: {
+    position: "absolute",
+    left: 16, // ✅ no extra gap
+    top: 45,
+  },
 
-  avatar: { width: 120, height: 120, borderRadius: 60 },
+  avatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: "#fff",
+  },
 
   username: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: "#fff",
     marginTop: 10,
   },
 
-  form: { padding: 20 },
+  /* FORM */
+  form: {
+    padding: 20, // ✅ padding only for content
+  },
 
   input: {
     backgroundColor: "#fff",
@@ -221,20 +233,25 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
   },
 
-  disabled: { backgroundColor: "#eee" },
+  disabled: {
+    backgroundColor: "#eee",
+  },
 
   btn: {
-    backgroundColor: "#28a745",
+    backgroundColor: "#22c55e",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
+    marginTop: 10,
   },
 
-  btnDisabled: { backgroundColor: "#28a74599" },
+  btnDisabled: {
+    opacity: 0.7,
+  },
 
   btnText: {
     color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

@@ -11,8 +11,8 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
-import { getProductsByRestaurantApi } from "../../src/api/addResturantProducts";
-import { BASE_IMAGE_URL } from "../../src/api/constants/endpoints";
+import { getProductsByRestaurantApi } from "../../src/api/resturants/addResturantProducts";
+import { BASE_IMAGE_URL } from "../../src/api/apiConfig.js"
 import ProductBottomModal from "../../src/components/Resturant/ProductBottomModal";
 
 export default function Products() {

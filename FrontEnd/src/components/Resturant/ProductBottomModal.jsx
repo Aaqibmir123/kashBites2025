@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   Modal,
   View,
@@ -9,27 +9,27 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import { BASE_IMAGE_URL } from "../../api/constants/endpoints";
+import { BASE_IMAGE_URL } from "../../../src/api/apiConfig.js";
 import { CartContext } from "../../../src/api/context/CartContext";
 
-export default function ProductBottomModal({ visible, product, onClose }) {
+export default function ProductBottomModal({
+  visible,
+  product,
+  isFavorite,
+  onToggleFavorite,
+  onClose,
+}) {
   const { addToCart } = useContext(CartContext);
 
   const [qty, setQty] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(null);
-  const [favorite, setFavorite] = useState(false);
 
   /* ================= RESET ON OPEN ================= */
   useEffect(() => {
     if (visible && product) {
       setQty(1);
-      setFavorite(false);
 
-      // default variant (if exists)
-      if (
-        product.pricingType !== "single" &&
-        product.variants?.length > 0
-      ) {
+      if (product.pricingType !== "single" && product.variants?.length > 0) {
         setSelectedVariant(product.variants[0]);
       } else {
         setSelectedVariant(null);
@@ -39,7 +39,7 @@ export default function ProductBottomModal({ visible, product, onClose }) {
 
   if (!product) return null;
 
-  /* ================= PRICE LOGIC ================= */
+  /* ================= PRICE ================= */
   const unitPrice =
     product.pricingType === "single"
       ? product.price
@@ -48,28 +48,57 @@ export default function ProductBottomModal({ visible, product, onClose }) {
   const totalAmount = unitPrice * qty;
 
   /* ================= ADD TO CART ================= */
-  const handleAddToCart = () => {
-    addToCart({
+ const handleAddToCart = async () => {
+  try {
+    const res = await addToCart({
       productId: product._id,
       name: product.name,
       description: product.description || "",
       unitPrice,
       qty,
       image: product.image,
-      variant: selectedVariant
-        ? selectedVariant.label
-        : null,
+      size: selectedVariant ? selectedVariant.label : null,
       restaurantId: product.restaurantId,
     });
 
+    console.log("Add to Cart Response:", res);
+
+    // ✅ CASE 1: Normal success
+    if (res?.success) {
+      Toast.show({
+        type: "success",
+        text1: res.message || "Added to Cart 🛒",
+      });
+      onClose();
+      return;
+    }
+
+    // ✅ CASE 2: Item already exists (treat as success)
+    if (res?.message === "Item already in cart") {
+      Toast.show({
+        type: "success",
+        text1: "Item already in cart🛒",
+        
+      });
+      // onClose();
+      return;
+    }
+
+    // ❌ REAL ERROR
     Toast.show({
-      type: "success",
-      text1: "Added to Cart 🛒",
-      text2: `${product.name} added successfully`,
+      type: "error",
+      text1: res?.message || "Failed to add item",
     });
 
-    onClose();
-  };
+  } catch (error) {
+    console.log("Add to cart error:", error);
+    Toast.show({
+      type: "error",
+      text1: "Something went wrong",
+    });
+  }
+};
+
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -91,14 +120,15 @@ export default function ProductBottomModal({ visible, product, onClose }) {
               style={styles.image}
             />
 
+            {/* ❤️ FAVORITE (REAL DB STATE) */}
             <TouchableOpacity
               style={styles.favBtn}
-              onPress={() => setFavorite(!favorite)}
+              onPress={() => onToggleFavorite(product._id)}
             >
               <Ionicons
-                name={favorite ? "heart" : "heart-outline"}
+                name={isFavorite ? "heart" : "heart-outline"}
                 size={22}
-                color={favorite ? "#DC2626" : "#111"}
+                color={isFavorite ? "#DC2626" : "#111"}
               />
             </TouchableOpacity>
           </View>
@@ -173,10 +203,7 @@ export default function ProductBottomModal({ visible, product, onClose }) {
           </View>
 
           {/* ADD TO CART */}
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={handleAddToCart}
-          >
+          <TouchableOpacity style={styles.addBtn} onPress={handleAddToCart}>
             <Text style={styles.addText}>Add to Cart</Text>
           </TouchableOpacity>
         </View>
@@ -184,14 +211,11 @@ export default function ProductBottomModal({ visible, product, onClose }) {
     </Modal>
   );
 }
-
-/* ================= STYLES ================= */
-
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
 
   sheet: {
@@ -203,44 +227,54 @@ const styles = StyleSheet.create({
 
   closeBtn: {
     position: "absolute",
-    right: 12,
     top: 12,
+    right: 12,
     zIndex: 10,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 16,
+    padding: 4,
   },
 
-  imageWrapper: { position: "relative" },
+  imageWrapper: {
+    position: "relative",
+  },
 
   image: {
     width: "100%",
-    height: 190,
+    height: 200,
     borderRadius: 16,
+    backgroundColor: "#E5E7EB",
   },
 
   favBtn: {
     position: "absolute",
     top: 10,
     right: 10,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,255,255,0.95)",
     padding: 6,
     borderRadius: 20,
+    elevation: 4,
   },
 
   name: {
     fontSize: 18,
     fontWeight: "700",
-    marginTop: 10,
+    marginTop: 12,
+    color: "#111827",
   },
 
   desc: {
     fontSize: 13,
     color: "#6B7280",
     marginTop: 6,
+    lineHeight: 18,
   },
 
   section: {
-    marginTop: 14,
+    marginTop: 16,
     fontSize: 14,
     fontWeight: "600",
+    color: "#111827",
   },
 
   variantRow: {
@@ -274,7 +308,7 @@ const styles = StyleSheet.create({
   },
 
   totalRow: {
-    marginTop: 18,
+    marginTop: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -289,6 +323,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#166534",
+    marginTop: 2,
   },
 
   qtyBox: {
@@ -301,16 +336,19 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
 
-  qtyBtn: { padding: 4 },
+  qtyBtn: {
+    padding: 4,
+  },
 
   qtyText: {
     marginHorizontal: 10,
     fontSize: 15,
     fontWeight: "600",
+    color: "#111827",
   },
 
   addBtn: {
-    marginTop: 18,
+    marginTop: 20,
     backgroundColor: "#16A34A",
     paddingVertical: 14,
     borderRadius: 16,

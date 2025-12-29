@@ -1,6 +1,7 @@
 import { useEffect, useContext } from "react";
 import { Stack } from "expo-router";
 import * as Notifications from "expo-notifications";
+import * as SplashScreen from "expo-splash-screen";
 import Constants from "expo-constants";
 import Toast from "react-native-toast-message";
 
@@ -9,7 +10,7 @@ import { CartProvider } from "@/src/api/context/CartContext";
 import { CheckoutProvider } from "@/src/api/context/checkoutContext";
 import { saveUserPushTokenApi } from "@/src/api/saveUserPushTokenApi";
 
-/* 🔔 Notification handler (Expo latest) */
+/* 🔔 Notification handler */
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -20,15 +21,30 @@ Notifications.setNotificationHandler({
   }),
 });
 
+/* 🚫 Splash auto-hide disable */
+SplashScreen.preventAutoHideAsync();
+
 /* ================= APP INNER LAYOUT ================= */
 function AppLayout() {
   const { user } = useContext(AuthContext);
 
+  /* 🔔 Register push token after login */
   useEffect(() => {
     if (user?._id) {
       registerForPushNotifications();
     }
   }, [user]);
+
+  /* 🚀 Splash hide after app ready */
+  useEffect(() => {
+    const prepare = async () => {
+      // ⏳ splash delay (replace later with auth restore check)
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await SplashScreen.hideAsync();
+    };
+
+    prepare();
+  }, []);
 
   const registerForPushNotifications = async () => {
     try {
@@ -47,7 +63,7 @@ function AppLayout() {
         return;
       }
 
-      /* 2️⃣ Safe projectId */
+      /* 2️⃣ Project ID */
       const projectId =
         Constants.expoConfig?.extra?.eas?.projectId ??
         Constants.easConfig?.projectId;
@@ -57,16 +73,15 @@ function AppLayout() {
         return;
       }
 
-      /* 3️⃣ Get Expo push token */
+      /* 3️⃣ Expo push token */
       const token = (
         await Notifications.getExpoPushTokenAsync({ projectId })
       ).data;
 
       console.log("🔔 PUSH TOKEN:", token);
 
-      /* 4️⃣ SAVE TOKEN USING API LAYER (IMPORTANT LINE) */
+      /* 4️⃣ Save token */
       await saveUserPushTokenApi(user._id, token);
-
     } catch (err) {
       console.log("Push notification error:", err);
     }

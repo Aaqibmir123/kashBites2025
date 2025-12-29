@@ -1,44 +1,44 @@
-import { BASE_URLL,AdminProfile } from "../constants/admin/endPoints.js";
+import { BASE_URL, Profile } from "../constants/admin/endPoints.js";
+import { getAuthHeaders } from "../authHeader.js";
 
-export const getAdminProfileApi = async ({userId}) => { 
+/* ================= GET ADMIN PROFILE ================= */
+export const getAdminProfileApi = async () => {
   try {
-    const response = await fetch(BASE_URLL + AdminProfile.getProfile, {   
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data;
+    const headers = await getAuthHeaders(true); // ✅ token only
+
+    const response = await fetch(
+      `${BASE_URL}${Profile.getProfile}`,
+      {
+        method: "GET",
+        headers,
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error("Admin profile api error:", error);
+    throw error;
   }
-    catch (err) {
-    throw new Error(`API Error in getProfileApi: ${err.message}`);
-    }
 };
 
-
-
+/* ================= UPDATE ADMIN PROFILE ================= */
 export const updateAdminProfileApi = async (formData) => {
   try {
-    const response = await fetch(BASE_URLL+ AdminProfile.updateProfile, {
-      method: "POST",  
-      body: formData,
-    });
+    // ❗ EXACTLY like USER
+    const headers = await getAuthHeaders(false); // ❌ no Content-Type
 
-    const data = await response.json();
+    const response = await fetch(
+      `${BASE_URL}${Profile.updateProfile}`,
+      {
+        method: "PUT",
+        headers,
+        body: formData,
+      }
+    );
 
-    if (!response.ok) {
-      throw new Error(data.message || "Update failed");
-    }
-
-    return data;
-
-  } catch (err) {
-    throw new Error(`API Error in updateProfileApi: ${err.message}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Update admin profile api error:", error);
+    throw error;
   }
 };
-

@@ -4,8 +4,13 @@ const notificationSchema = new mongoose.Schema(
   {
     receiverType: {
       type: String,
-      enum: ["RESTAURANT", "ADMIN"],
+      enum: ["USER", "RESTAURANT", "ADMIN"], // ✅ FIX
       required: true,
+    },
+
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
 
     restaurantId: {

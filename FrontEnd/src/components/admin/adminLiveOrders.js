@@ -10,7 +10,7 @@ import {
 } from "react-native";
 
 import { getAdminOrdersApi } from "../../api/admin/adminLiveOrders";
-import { BASE_IMAGE_URL } from "../../api/constants/admin/endPoints";
+import { BASE_IMAGE_URL } from "../../../src/api/apiConfig.js"
 
 const STATUSES = [
   "All",

@@ -11,7 +11,7 @@ import {
 import { useNavigation } from "expo-router";
 
 import { getAdminDashboardApi } from "../../../src/api/admin/adminDashboard";
-import { BASE_IMAGE_URL } from "../../../src/api/constants/endpoints";
+import { BASE_IMAGE_URL } from "../../../src/api/apiConfig.js"
 import AppHeader from "../../../src/components/AppHeaderIcon";
 
 export default function Dashboard() {

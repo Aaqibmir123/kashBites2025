@@ -16,37 +16,32 @@ import {
   updateOrderStatusApi,
 } from "../../../../src/api/resturants/orders";
 import { AuthContext } from "../../../../src/api/context/authContext";
-import { BASE_IMAGE_URL } from "../../../../src/api/constants/endpoints";
+import { BASE_IMAGE_URL } from "../../../../src/api/apiConfig";
 import AppHeader from "../../../../src/components/AppHeaderIcon";
 
 export default function ReadyOrders() {
   const { user } = useContext(AuthContext);
 
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  /* ================= FETCH READY ORDERS ================= */
-
-
-
-useFocusEffect(
-  useCallback(() => {
-    if (user?.restaurantId) {
-      fetchReadyOrders();
-    }
-  }, [user])
-);
-
-
+  /* ===============================
+     FETCH READY ORDERS
+  ================================ */
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        fetchReadyOrders();
+      }
+    }, [user])
+  );
 
   const fetchReadyOrders = async () => {
     try {
       setLoading(true);
 
-      const res = await getRestaurantOrdersApi(
-        user.restaurantId,
-        "Ready"
-      );
+      // ✅ token-based, ONLY status
+      const res = await getRestaurantOrdersApi("Ready");
 
       if (res?.success) {
         setOrders(res.data);
@@ -54,98 +49,107 @@ useFocusEffect(
         setOrders([]);
       }
     } catch (error) {
-      console.log("Ready orders error:", error);
+      console.log("Ready orders error:", error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  /* ================= MARK AS DELIVERED ================= */
+  /* ===============================
+     MARK AS DELIVERED
+  ================================ */
   const markAsDelivered = async (orderId) => {
     try {
       await updateOrderStatusApi(orderId, "Delivered");
-      fetchReadyOrders(); // refresh list
+      fetchReadyOrders();
     } catch (error) {
-      console.log("Mark delivered error:", error);
+      console.log("Mark delivered error:", error.message);
     }
   };
 
-  /* ================= LOADING ================= */
-  // if (loading) {
-  //   return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
-  // }
+  /* ===============================
+     LOADING
+  ================================ */
+  if (loading) {
+    return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
+  }
 
   return (
-    <View>  
-      <AppHeader/>
+    <View style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
+      <AppHeader title="Ready Orders" />
+
       <FlatList
-      data={orders}
-      keyExtractor={(item) => item._id}
-      contentContainerStyle={{ padding: 14 }}
-      ListEmptyComponent={
-        <Text style={styles.empty}>No Ready Orders</Text>
-      }
-      renderItem={({ item }) => (
-        <View style={styles.card}>
-          {/* ===== TOP ROW ===== */}
-          <View style={styles.topRow}>
-            <View>
-              <Text style={styles.customer}>{item.address?.name}</Text>
-              <Text style={styles.phone}>📞 {item.address?.phone}</Text>
+        data={orders}
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={{ padding: 14 }}
+        ListEmptyComponent={
+          <Text style={styles.empty}>No Ready Orders</Text>
+        }
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            {/* ===== TOP ROW ===== */}
+            <View style={styles.topRow}>
+              <View>
+                <Text style={styles.customer}>{item.address?.name}</Text>
+                <Text style={styles.phone}>📞 {item.address?.phone}</Text>
+              </View>
+
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusText}>READY</Text>
+              </View>
             </View>
 
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>READY</Text>
-            </View>
-          </View>
-
-          {/* ===== ADDRESS ===== */}
-          <View style={styles.addressBox}>
-            <Ionicons name="location-outline" size={14} color="#444" />
-            <Text style={styles.address}>
-              {item.address?.address}
-            </Text>
-          </View>
-
-          {/* ===== PRODUCT ===== */}
-          <View style={styles.row}>
-            <Image
-              source={{
-                uri: item.product?.image
-                  ? BASE_IMAGE_URL + item.product.image
-                  : "https://via.placeholder.com/60",
-              }}
-              style={styles.image}
-            />
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.product}>
-                {item.product?.name} × {item.product?.qty}
-              </Text>
-              <Text style={styles.price}>
-                ₹{item.product?.price}
+            {/* ===== ADDRESS ===== */}
+            <View style={styles.addressBox}>
+              <Ionicons name="location-outline" size={14} color="#444" />
+              <Text style={styles.address}>
+                {item.address?.house}, {item.address?.village},{" "}
+                {item.address?.pincode}
               </Text>
             </View>
-          </View>
 
-          {/* ===== ACTION ===== */}
-          <TouchableOpacity
-            style={styles.deliveredBtn}
-            onPress={() => markAsDelivered(item._id)}
-          >
-            <Ionicons name="checkmark-circle" size={18} color="#fff" />
-            <Text style={styles.deliveredText}>
-              {" "}Mark as Delivered
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    /></View>
-   
+            {/* ===== ITEMS ===== */}
+            {item.items.map((prod) => (
+              <View key={prod._id} style={styles.row}>
+                <Image
+                  source={{ uri: `${BASE_IMAGE_URL}${prod.image}` }}
+                  style={styles.image}
+                />
+
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.product}>
+                    {prod.name} × {prod.qty}
+                  </Text>
+                </View>
+              </View>
+            ))}
+
+            {/* ===== TOTAL ===== */}
+            <View style={styles.totalBox}>
+              <Text style={styles.totalLabel}>Total Amount</Text>
+              <Text style={styles.totalAmount}>₹{item.totalAmount}</Text>
+            </View>
+
+            {/* ===== ACTION ===== */}
+            <TouchableOpacity
+              style={styles.deliveredBtn}
+              onPress={() => markAsDelivered(item._id)}
+            >
+              <Ionicons name="checkmark-circle" size={18} color="#fff" />
+              <Text style={styles.deliveredText}>
+                {" "}Mark as Delivered
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+    </View>
   );
 }
 
-/* ================= STYLES ================= */
+/* ===============================
+   STYLES
+================================ */
 
 const styles = StyleSheet.create({
   card: {
@@ -200,15 +204,28 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 10,
     marginRight: 12,
+    backgroundColor: "#eee",
   },
   product: {
     fontWeight: "600",
     fontSize: 14,
   },
-  price: {
-    marginTop: 6,
-    color: "green",
-    fontWeight: "bold",
+  totalBox: {
+    marginTop: 12,
+    backgroundColor: "#111",
+    borderRadius: 10,
+    padding: 12,
+    alignItems: "center",
+  },
+  totalLabel: {
+    color: "#ccc",
+    fontSize: 12,
+  },
+  totalAmount: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 2,
   },
   deliveredBtn: {
     flexDirection: "row",

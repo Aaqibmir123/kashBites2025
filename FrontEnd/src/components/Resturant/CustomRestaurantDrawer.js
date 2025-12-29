@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { AuthContext } from "@/src/api/context/authContext";
-import { BASE_IMAGE_URL } from "@/src/api/constants/endpoints";
+import { BASE_IMAGE_URL } from "../../../src/api/apiConfig.js"
 
 export default function CustomRestaurantDrawer(props) {
   const router = useRouter();
